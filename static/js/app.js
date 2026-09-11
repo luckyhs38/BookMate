@@ -2368,11 +2368,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const rawMsg = (err && err.message) ? String(err.message) : "";
     const msg = rawMsg.toLowerCase();
 
+    // 1. 도메인 / Origin 관련 설정 오류는 최우선으로 원문 또는 명확한 안내 표시
+    if (msg.includes("origin") || msg.includes("출처")) {
+      return rawMsg || "인증 출처(Origin) 오류가 발생했습니다. Neon 콘솔의 도메인 설정을 확인해주세요.";
+    }
+
     if (action === "login") {
-      if (msg.includes("401") || msg.includes("invalid") || msg.includes("credential") || msg.includes("unauthorized") || msg.includes("비밀번호")) {
+      if (msg.includes("401") || msg.includes("credential") || msg.includes("unauthorized") || msg.includes("비밀번호")) {
         return "이메일 또는 비밀번호를 확인해주세요.";
       }
-      if (msg.includes("email") || msg.includes("이메일")) {
+      if ((msg.includes("email") || msg.includes("이메일")) && (msg.includes("format") || msg.includes("형식"))) {
         return "이메일 형식을 확인해주세요.";
       }
       if (rawMsg && !msg.includes("object") && !msg.includes("fetch")) {
@@ -2386,10 +2391,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (msg.includes("password") || msg.includes("비밀번호") || msg.includes("short") || msg.includes("길이")) {
         return "비밀번호는 최소 8자 이상이어야 합니다.";
       }
-      if (msg.includes("email") || msg.includes("이메일") || msg.includes("format") || msg.includes("valid") || msg.includes("형식")) {
+      // 이메일 형식 검사 (in'valid' origin 등의 단어로 오인되지 않도록 이메일 키워드와 함께 검사)
+      if ((msg.includes("email") || msg.includes("이메일")) && (msg.includes("format") || msg.includes("형식") || msg.includes("invalid") || msg.includes("validation"))) {
         return "이메일 형식을 확인해주세요.";
       }
-      // 백엔드에서 전달된 구체적인 안내 메시지(예: Origin 오류, 서버 오류 등)가 있다면 우선 표시
+      // 백엔드에서 전달된 구체적인 안내 메시지가 있다면 우선 표시
       if (rawMsg && !msg.includes("object") && !msg.includes("fetch")) {
         return rawMsg;
       }

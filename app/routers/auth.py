@@ -50,15 +50,25 @@ def _check_csrf_origin(request: Request):
 
 
 def _get_auth_upstream_origin(request: Request) -> str:
-    """Neon Auth upstream 호출에 전달할 Origin 헤더 결정 (로컬 개발 127.0.0.1 -> localhost 매핑)"""
+    """Neon Auth upstream 호출에 전달할 Origin 헤더 결정 (로컬 개발 127.0.0.1 -> localhost 매핑 및 클라우드 HTTPS 보정)"""
     origin = request.headers.get("origin")
     if not origin:
-        origin = str(request.base_url).rstrip("/")
-    # Neon Auth 로컬 개발 허용 도메인은 기본적으로 http://localhost:8000 (또는 localhost:포트)
-    # 브라우저가 127.0.0.1로 접속하더라도 upstream에는 허용된 localhost 도메인으로 안전하게 매핑
+        proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", ""))
+        if host:
+            origin = f"{proto}://{host}"
+        else:
+            origin = str(request.base_url).rstrip("/")
+
+    # 1. 로컬 개발 환경 127.0.0.1 -> localhost 매핑
     if "127.0.0.1" in origin:
         origin = origin.replace("127.0.0.1", "localhost")
-    return origin
+
+    # 2. Render 등 클라우드 배포 환경: 내부 프록시로 인해 http:// 로 들어온 경우 https:// 로 자동 보정
+    if "onrender.com" in origin and origin.startswith("http://"):
+        origin = origin.replace("http://", "https://", 1)
+
+    return origin.rstrip("/")
 
 
 def _set_session_cookie(response: Response, session_token: str, max_age: int | None):
