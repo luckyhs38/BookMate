@@ -2365,7 +2365,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 사용자 친화적 에러 메시지 변환 (민감정보/스택트레이스 노출 방지)
   function formatAuthErrorMessage(err, action) {
-    const msg = (err && err.message) ? String(err.message).toLowerCase() : "";
+    const rawMsg = (err && err.message) ? String(err.message) : "";
+    const msg = rawMsg.toLowerCase();
+
     if (action === "login") {
       if (msg.includes("401") || msg.includes("invalid") || msg.includes("credential") || msg.includes("unauthorized") || msg.includes("비밀번호")) {
         return "이메일 또는 비밀번호를 확인해주세요.";
@@ -2373,18 +2375,25 @@ document.addEventListener("DOMContentLoaded", () => {
       if (msg.includes("email") || msg.includes("이메일")) {
         return "이메일 형식을 확인해주세요.";
       }
+      if (rawMsg && !msg.includes("object") && !msg.includes("fetch")) {
+        return rawMsg;
+      }
       return "이메일 또는 비밀번호를 확인해주세요.";
     } else if (action === "signup") {
-      if (msg.includes("already") || msg.includes("exist") || msg.includes("duplicate") || msg.includes("중복") || msg.includes("409")) {
+      if (msg.includes("already") || msg.includes("exist") || msg.includes("duplicate") || msg.includes("중복") || msg.includes("이미") || msg.includes("등록된")) {
         return "이미 사용 중인 이메일입니다.";
       }
-      if (msg.includes("password") || msg.includes("8") || msg.includes("short") || msg.includes("길이")) {
+      if (msg.includes("password") || msg.includes("비밀번호") || msg.includes("short") || msg.includes("길이")) {
         return "비밀번호는 최소 8자 이상이어야 합니다.";
       }
-      if (msg.includes("email") || msg.includes("format") || msg.includes("valid") || msg.includes("형식")) {
+      if (msg.includes("email") || msg.includes("이메일") || msg.includes("format") || msg.includes("valid") || msg.includes("형식")) {
         return "이메일 형식을 확인해주세요.";
       }
-      return "회원가입 정보를 확인해주세요. (비밀번호 8자 이상)";
+      // 백엔드에서 전달된 구체적인 안내 메시지(예: Origin 오류, 서버 오류 등)가 있다면 우선 표시
+      if (rawMsg && !msg.includes("object") && !msg.includes("fetch")) {
+        return rawMsg;
+      }
+      return "회원가입 요청을 처리할 수 없습니다. 입력 정보를 확인해주세요.";
     }
     return "요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
   }

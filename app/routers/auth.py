@@ -132,22 +132,33 @@ async def sign_up(
         logger.warning(f"Neon Auth sign-up failure: status={resp.status_code}, body={err_body}")
         try:
             err_data = resp.json()
-            err_code = err_data.get("code") or ""
-            err_msg = err_data.get("message") or ""
+            err_code = str(err_data.get("code") or "")
+            err_msg = str(err_data.get("message") or "")
+            if not err_msg and isinstance(err_data.get("error"), str):
+                err_msg = err_data["error"]
+            elif isinstance(err_data.get("error"), dict):
+                err_code = err_code or str(err_data["error"].get("code") or "")
+                err_msg = err_msg or str(err_data["error"].get("message") or "")
         except Exception:
             err_code = ""
             err_msg = err_body
 
-        if "USER_ALREADY_EXISTS" in err_code or "already exists" in err_msg.lower():
+        err_combined = f"{err_code} {err_msg}".lower()
+        if "user_already_exists" in err_combined or "already exists" in err_combined or "duplicate" in err_combined:
             detail_msg = "이미 사용 중인 이메일입니다."
-        elif "PASSWORD_TOO_SHORT" in err_code or "password" in err_msg.lower():
+        elif "password_too_short" in err_combined or "password" in err_combined:
             detail_msg = "비밀번호는 최소 8자 이상이어야 합니다."
-        elif "VALIDATION_ERROR" in err_code or "email" in err_msg.lower():
+        elif "validation_error" in err_combined or "email" in err_combined:
             detail_msg = "이메일 형식을 확인해주세요."
+        elif resp.status_code == 403 or "origin" in err_combined:
+            detail_msg = f"인증 출처(Origin) 오류: {err_msg or '허용되지 않은 도메인입니다.'}"
+        elif resp.status_code >= 500:
+            detail_msg = f"인증 서버 오류 ({resp.status_code}): {err_msg or '잠시 후 다시 시도해주세요.'}"
         else:
-            detail_msg = "이미 등록된 이메일이거나 회원가입 요청이 올바르지 않습니다."
+            detail_msg = err_msg if err_msg else "이미 등록된 이메일이거나 회원가입 요청이 올바르지 않습니다."
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail_msg)
+        err_status = status.HTTP_400_BAD_REQUEST if resp.status_code < 500 else status.HTTP_502_BAD_GATEWAY
+        raise HTTPException(status_code=err_status, detail=detail_msg)
 
     data = resp.json()
     user_info = data.get("user") or {}
