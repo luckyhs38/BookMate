@@ -64,6 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 브라우저 뒤로가기 / 앞으로가기(popstate) 이벤트 리스너
   window.addEventListener("popstate", (e) => {
+    // 뒤로가기 시 인증 모달이 열려 있다면 모달만 부드럽게 닫고 현재 페이지 유지
+    if (authModal && authModal.style.display !== "none") {
+      closeAuthModal(true);
+      return;
+    }
+
     let targetView = e.state?.view;
     if (!targetView) {
       const hash = window.location.hash.replace("#", "");
@@ -2421,6 +2427,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     switchAuthView(view);
     authModal.style.display = "flex";
+    // 모바일 뒤로가기 제스처 연동을 위해 가상 모달 상태 푸시
+    if (window.history.state?.modal !== "auth") {
+      history.pushState({ modal: "auth", view: window.history.state?.view || "main" }, "", window.location.href);
+    }
   }
 
   function closeAuthModal(force = false) {
@@ -2432,8 +2442,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function switchAuthView(view) {
-    if (isAuthSubmitting) return;
+  function switchAuthView(view, force = false) {
+    if (isAuthSubmitting && !force) return;
 
     if (view === "signup") {
       if (authViewLogin) authViewLogin.style.display = "none";
@@ -2482,7 +2492,15 @@ document.addEventListener("DOMContentLoaded", () => {
   if (authModal) {
     authModal.addEventListener("click", (e) => {
       if (e.target === authModal && !isAuthSubmitting) {
-        closeAuthModal(false);
+        // 모바일 스크롤 제스처 실수로 인한 입력 증발 방지: 사용자가 타이핑한 내용이 있으면 닫지 않음
+        const hasInput = (loginEmailInput && loginEmailInput.value) ||
+          (loginPasswordInput && loginPasswordInput.value) ||
+          (signupNameInput && signupNameInput.value) ||
+          (signupEmailInput && signupEmailInput.value) ||
+          (signupPasswordInput && signupPasswordInput.value);
+        if (!hasInput) {
+          closeAuthModal(false);
+        }
       }
     });
   }
@@ -2611,6 +2629,13 @@ document.addEventListener("DOMContentLoaded", () => {
         BookMateState.clearCurrentUser();
         updateHeaderAuthUI(null);
 
+        // 성공 시 제출 상태 먼저 해제 후 즉시 로그인 화면으로 강제 전환
+        isAuthSubmitting = false;
+        if (signupSubmitBtn) {
+          signupSubmitBtn.disabled = false;
+          signupSubmitBtn.textContent = "CREATE ACCOUNT →";
+        }
+
         // 로그인 화면으로 전환 및 가입한 이메일 자동 채우기
         if (loginEmailInput) {
           loginEmailInput.value = email;
@@ -2618,7 +2643,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (loginPasswordInput) {
           loginPasswordInput.value = "";
         }
-        switchAuthView("login");
+        switchAuthView("login", true);
+
+        // 모바일 스크롤 위치 초기화 및 안내
+        const modalBody = authModal ? authModal.querySelector(".auth-modal-card") : null;
+        if (modalBody) modalBody.scrollTop = 0;
         showToast("회원가입이 완료되었습니다. 로그인해 주세요.");
       } catch (err) {
         if (signupErrorMsg) {

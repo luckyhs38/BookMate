@@ -334,6 +334,10 @@ const BookMateComponents = {
         saveBtn.style.display = "inline-block";
         cancelBtn.style.display = "inline-block";
         editTextarea.focus();
+        const parentPanel = item.closest(".discussion-accordion-panel");
+        if (parentPanel) {
+          parentPanel.style.height = "auto";
+        }
       });
 
       // CANCEL 클릭: 편집 모드 종료
@@ -344,6 +348,10 @@ const BookMateComponents = {
         editBtn.style.display = "inline-block";
         saveBtn.style.display = "none";
         cancelBtn.style.display = "none";
+        const parentPanel = item.closest(".discussion-accordion-panel");
+        if (parentPanel) {
+          parentPanel.style.height = "auto";
+        }
       });
 
       // SAVE 클릭: PATCH 요청

@@ -1079,7 +1079,7 @@ body {
   font-family: var(--font-sans);
   font-size: 0.8rem;
   letter-spacing: 0.04em;
-  z-index: 1000;
+  z-index: 2500;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -2915,17 +2915,31 @@ body {
   }
 
   /* --- 7. Modals (Auth Modal & Info Modal) --- */
+  .auth-modal-overlay {
+    align-items: flex-start;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .auth-modal-card,
   .info-modal-card {
     max-width: 100%;
     width: 100%;
-    margin: 12px;
-    max-height: calc(100vh - 24px);
-    max-height: calc(100dvh - 24px);
+    margin: 0 auto;
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 20px 16px;
+    padding: 24px 18px;
     box-sizing: border-box;
+  }
+
+  /* iOS Safari 16px 미만 자동 줌(Zoom-in) 방지 */
+  .form-input-editorial,
+  .form-textarea-editorial {
+    font-size: 16px !important;
   }
 
   .auth-modal-close-btn {

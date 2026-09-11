@@ -130,6 +130,13 @@ async def sign_up(
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(url, json=req_body, headers=headers)
+            # upstream Neon Auth가 Invalid origin(400/403)을 반환한 경우 기본 신뢰 origin으로 안전하게 1회 fallback 재시도
+            if resp.status_code in (400, 403) and "origin" in resp.text.lower():
+                fallback_origin = "http://localhost:8000"
+                if headers.get("Origin") != fallback_origin:
+                    logger.info(f"Neon Auth sign-up Invalid origin 감지 ({headers.get('Origin')}) -> fallback origin({fallback_origin})으로 재시도")
+                    headers["Origin"] = fallback_origin
+                    resp = await client.post(url, json=req_body, headers=headers)
     except httpx.RequestError as exc:
         logger.error(f"Neon Auth sign-up 통신 오류: {exc}")
         raise HTTPException(
@@ -230,6 +237,13 @@ async def sign_in(
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(url, json=req_body, headers=headers)
+            # upstream Neon Auth가 Invalid origin(400/403)을 반환한 경우 기본 신뢰 origin으로 안전하게 1회 fallback 재시도
+            if resp.status_code in (400, 403) and "origin" in resp.text.lower():
+                fallback_origin = "http://localhost:8000"
+                if headers.get("Origin") != fallback_origin:
+                    logger.info(f"Neon Auth sign-in Invalid origin 감지 ({headers.get('Origin')}) -> fallback origin({fallback_origin})으로 재시도")
+                    headers["Origin"] = fallback_origin
+                    resp = await client.post(url, json=req_body, headers=headers)
     except httpx.RequestError as exc:
         logger.error(f"Neon Auth sign-in 통신 오류: {exc}")
         raise HTTPException(
