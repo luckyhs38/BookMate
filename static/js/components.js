@@ -173,6 +173,9 @@ const BookMateComponents = {
   createQuestionCard(question, onToggleAccordion, onLike, index = 1) {
     const item = document.createElement("div");
     item.className = "question-row-item";
+    if (question && question.id) {
+      item.dataset.questionId = question.id;
+    }
 
     // 상단 번호 + 질문 헤더
     const headerEl = document.createElement("div");
@@ -261,6 +264,9 @@ const BookMateComponents = {
   createAnswerCard(answerData, index = 1) {
     const item = document.createElement("div");
     item.className = "quote-item";
+    if (answerData && answerData.id) {
+      item.dataset.answerId = answerData.id;
+    }
 
     const authorLineEl = document.createElement("div");
     authorLineEl.className = "quote-author-line";

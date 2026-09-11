@@ -7,7 +7,7 @@
   <title>BOOKMATE — 같은 책, 다른 생각</title>
   <meta name="description"
     content="책 속에서 발견한 질문에 답하고, 같은 책을 읽은 다른 독자의 깊은 시선을 마주하세요. 나만의 단단한 생각을 한 편의 에세이로 완성하는 공개 북클럽.">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/style.css?v=20260911_4">
 </head>
 
 <body>
@@ -28,7 +28,7 @@
             LOGIN →
           </button>
           <div id="header-user-group" class="header-user-group" style="display: none;">
-            <span id="header-user-name" class="header-user-name"></span>
+            <button type="button" id="header-user-name" class="header-user-name header-user-name-btn" aria-label="마이페이지로 이동"></button>
             <button type="button" class="header-auth-btn" id="header-logout-btn">
               LOGOUT →
             </button>
@@ -696,6 +696,137 @@
     </section>
 
     <!-- ============================================================= -->
+    <!-- VIEW 8: 마이페이지 (MY READING NOTES)                          -->
+    <!-- ============================================================= -->
+    <section id="view-my-page" class="view-section">
+      <div class="my-page-container">
+
+        <!-- 상단 네비게이션: 메인으로 버튼 -->
+        <div class="my-page-nav">
+          <button type="button" id="my-page-back-btn" class="btn btn-secondary my-page-back-btn">
+            ← 메인으로
+          </button>
+        </div>
+
+        <!-- 화면 상단 에디토리얼 타이포그래피 & 문구 -->
+        <header class="my-page-header">
+          <div class="my-page-tag">MY READING NOTES</div>
+          <h1 class="my-page-title">책마다 남겨둔,<br>나의 생각들.</h1>
+          <p class="my-page-desc">
+            함께 읽은 책과 그 안에 남긴 나의 목소리를 모았어요.
+          </p>
+
+          <!-- 내 정보 카드 (닉네임 / 이메일) -->
+          <div class="my-page-user-profile-card">
+            <div class="profile-avatar-circle" aria-hidden="true">
+              <span id="my-page-avatar-initial">독</span>
+            </div>
+            <div class="profile-info-wrap">
+              <div class="profile-name-row">
+                <span id="my-page-user-name" class="profile-name"></span>
+                <span class="profile-badge">MEMBER</span>
+              </div>
+              <div id="my-page-email-wrap" class="profile-email-row" style="display: none;">
+                <span id="my-page-user-email" class="profile-email"></span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- ========================================================= -->
+        <!-- 01 내가 참여한 책                                          -->
+        <!-- ========================================================= -->
+        <div class="my-page-step-section">
+          <div class="step-header">
+            <span class="step-circle-num">01</span>
+            <div class="step-header-text">
+              <h2 class="step-title">내가 참여한 책</h2>
+              <p class="step-subtitle">생각을 남긴 책을 선택하면 내 답변을 다시 볼 수 있어요.</p>
+            </div>
+          </div>
+
+          <!-- 로딩 상태 -->
+          <div id="my-page-books-loading" class="essay-loading-state" style="display: none;">
+            <div class="clubs-loading-line"></div>
+            <p class="essay-loading-text">참여한 책 목록을 불러오고 있습니다…</p>
+          </div>
+
+          <!-- 조회 에러 상태 -->
+          <div id="my-page-books-error" class="essay-error-card" style="display: none;">
+            <p id="my-page-books-error-msg">책 목록을 불러오지 못했습니다.</p>
+            <button type="button" id="my-page-books-retry-btn" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
+              다시 시도 ↻
+            </button>
+          </div>
+
+          <!-- 빈 상태 (참여한 책 없음) -->
+          <div id="my-page-books-empty" class="essay-empty-notice" style="display: none;">
+            <p>아직 기록한 생각이 없어요.</p>
+            <p class="sub-text">북클럽에서 책에 대한 생각을 남겨보세요.</p>
+            <button type="button" id="my-page-search-book-btn" class="btn btn-primary" style="margin-top: 14px; font-size: 0.85rem;">
+              책 찾기 →
+            </button>
+          </div>
+
+          <!-- 참여한 책 목록 그리드 -->
+          <div id="my-page-books-list" class="essay-books-grid my-page-books-grid"></div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 02 내가 쓴 생각                                            -->
+        <!-- ========================================================= -->
+        <div id="my-page-thoughts-section" class="my-page-step-section">
+          <div class="step-header">
+            <span class="step-circle-num">02</span>
+            <div class="step-header-text">
+              <h2 class="step-title">내가 쓴 생각</h2>
+              <p id="my-page-thoughts-subtitle" class="step-subtitle">선택한 책에 남긴 나의 생각들입니다.</p>
+            </div>
+          </div>
+
+          <!-- 책 미선택 시 안내 플레이스홀더 -->
+          <div id="my-page-thoughts-placeholder" class="essay-no-answers-card">
+            <p class="no-answers-text">위에서 책을 선택하면 내가 남긴 생각과 답변 목록을 볼 수 있어요.</p>
+          </div>
+
+          <!-- 책 선택 후 헤더 (도서 정보 & 독후감 쓰기 연결 버튼) -->
+          <div id="my-page-selected-book-header" class="my-page-selected-header" style="display: none;">
+            <div class="my-page-selected-meta">
+              <span class="my-page-selected-tag">선택된 책</span>
+              <h3 id="my-page-selected-title" class="my-page-selected-title"></h3>
+              <div class="my-page-selected-subinfo">
+                <span id="my-page-selected-author" class="my-page-selected-author"></span>
+                <span class="my-page-subinfo-divider">·</span>
+                <span id="my-page-selected-count" class="my-page-selected-count"></span>
+              </div>
+            </div>
+            <button type="button" id="my-page-write-essay-btn" class="btn btn-primary my-page-write-essay-btn">
+              이 책으로 독후감 쓰기 ↗
+            </button>
+          </div>
+
+          <!-- 생각 목록 로딩 상태 -->
+          <div id="my-page-answers-loading" class="essay-loading-state" style="display: none;">
+            <div class="clubs-loading-line"></div>
+            <p class="essay-loading-text">남겨둔 내 생각을 불러오는 중입니다…</p>
+          </div>
+
+          <!-- 생각 목록 에러 상태 -->
+          <div id="my-page-answers-error" class="essay-error-card" style="display: none;">
+            <p id="my-page-answers-error-msg">생각 목록을 불러오지 못했습니다.</p>
+            <button type="button" id="my-page-answers-retry-btn" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
+              다시 시도 ↻
+            </button>
+          </div>
+
+          <!-- 내 생각 목록 컨테이너 -->
+          <div id="my-page-answers-list" class="my-page-answers-list" style="display: none;"></div>
+        </div>
+
+      </div><!-- /.my-page-container -->
+    </section>
+
+    <!-- ============================================================= -->
     <!-- Footer — Minimal                                              -->
     <!-- ============================================================= -->
     <footer class="app-footer">
@@ -875,10 +1006,10 @@
   </div>
 
   <!-- Client JavaScript Modules -->
-  <script src="/static/js/state.js"></script>
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/components.js"></script>
-  <script src="/static/js/app.js"></script>
+  <script src="/static/js/state.js?v=20260911_4"></script>
+  <script src="/static/js/api.js?v=20260911_4"></script>
+  <script src="/static/js/components.js?v=20260911_4"></script>
+  <script src="/static/js/app.js?v=20260911_4"></script>
 </body>
 
 </html>

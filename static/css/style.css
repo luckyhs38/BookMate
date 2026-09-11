@@ -3959,3 +3959,442 @@ body {
     padding: 16px;
   }
 }
+
+/* ==========================================================================
+   Header — User Name Button Styling
+   ========================================================================== */
+.header-user-name-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--border-medium);
+}
+
+.header-user-name-btn:hover,
+.header-user-name-btn:focus-visible {
+  color: var(--color-green);
+  text-decoration-color: var(--color-green);
+  background-color: var(--surface-subtle);
+}
+
+/* ==========================================================================
+   VIEW 8: 마이페이지 (MY READING NOTES)
+   ========================================================================== */
+#view-my-page {
+  display: none;
+  width: 100%;
+  animation: fadeInView 0.3s ease forwards;
+}
+
+#view-my-page.active {
+  display: block;
+}
+
+.my-page-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: var(--space-md) 0 var(--space-3xl);
+}
+
+.my-page-nav {
+  margin-bottom: var(--space-lg);
+}
+
+.my-page-back-btn {
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.my-page-header {
+  margin-bottom: clamp(32px, 4.5vh, 48px);
+  padding-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.my-page-tag {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-green);
+  text-transform: uppercase;
+  margin-bottom: var(--space-xs);
+}
+
+.my-page-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.85rem, 3.2vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.my-page-desc {
+  font-family: var(--font-kr-serif);
+  font-size: clamp(0.88rem, 1.1vw, 0.98rem);
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: var(--space-lg);
+}
+
+/* 내 정보 프로필 카드 */
+.my-page-user-profile-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.profile-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-mint);
+  color: var(--color-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-kr-serif);
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.profile-info-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-name {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  word-break: break-all;
+}
+
+.profile-badge {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-green);
+  background: #ffffff;
+  border: 1px solid var(--color-mint);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.profile-email-row {
+  display: flex;
+  align-items: center;
+}
+
+.profile-email {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+/* 섹션 공통 */
+.my-page-step-section {
+  margin-bottom: clamp(36px, 5vh, 56px);
+}
+
+/* 01 참여한 책 목록 그리드 */
+.my-page-books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.my-page-book-card {
+  position: relative;
+  outline: none;
+}
+
+.my-page-book-card.selected {
+  border-color: var(--color-green);
+  background: #fbfdf9;
+  box-shadow: 0 0 0 1.5px var(--color-green), 0 4px 12px rgba(45, 90, 39, 0.08);
+}
+
+.my-page-book-card.selected::after {
+  content: "선택됨 ✓";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--color-green);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* 02 내가 쓴 생각 헤더 & 독후감 버튼 */
+.my-page-selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 16px 20px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.my-page-selected-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.my-page-selected-tag {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-green);
+  display: block;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.my-page-selected-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.my-page-selected-subinfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-kr-serif);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.my-page-selected-author {
+  color: var(--text-secondary);
+}
+
+.my-page-subinfo-divider {
+  color: var(--border-medium);
+}
+
+.my-page-selected-count {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+.my-page-write-essay-btn {
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* 내 생각 목록 및 개별 답변 카드 */
+.my-page-answers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.my-page-answer-card {
+  background: #ffffff;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  padding: 20px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.my-page-answer-card:hover {
+  border-color: var(--border-dark);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.my-page-q-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border-hairline);
+}
+
+.my-page-q-tag {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-orange);
+  background: #fdf5ef;
+  border: 1px solid rgba(224, 90, 43, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.my-page-q-text {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.my-page-a-box {
+  margin-bottom: 16px;
+}
+
+.my-page-a-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.my-page-answer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: 10px;
+  border-top: 1px solid var(--surface-subtle);
+  flex-wrap: wrap;
+}
+
+.my-page-answer-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.my-page-date-updated {
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+.my-page-goto-club-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-orange);
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.my-page-goto-club-btn:hover {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+.goto-arrow {
+  font-size: 0.85rem;
+  transition: transform 0.15s ease;
+}
+
+/* 북클럽 이동 시 타깃 답변 하이라이트 효과 */
+.quote-item.highlight-target-answer {
+  animation: targetAnswerGlow 2.5s ease-out forwards;
+}
+
+@keyframes targetAnswerGlow {
+  0% {
+    background-color: #f0f7ee;
+    outline: 2px solid var(--color-green);
+  }
+  100% {
+    background-color: transparent;
+    outline: 2px solid transparent;
+  }
+}
+
+/* 모바일 반응형 조절 (767px 이하) */
+@media (max-width: 767px) {
+  #view-my-page {
+    padding: 0 var(--space-xs);
+  }
+
+  .my-page-books-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .my-page-selected-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .my-page-write-essay-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .my-page-answer-card {
+    padding: 16px;
+  }
+
+  .my-page-answer-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .my-page-goto-club-btn {
+    align-self: flex-end;
+  }
+}

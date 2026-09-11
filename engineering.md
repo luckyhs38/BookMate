@@ -410,6 +410,42 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
 }
 ```
 
+### 7.5 본인이 참여한 도서 목록 조회 (`GET /api/users/me/books`)
+- **인증**: 필수 (`Depends(get_current_user)`)
+- **설명**: 로그인한 본인이 작성한 답변이 1개 이상 존재하는 도서 목록 및 책별 본인 작성 생각 개수를 반환.
+- **Response Body (200 OK)**:
+```json
+[
+  {
+    "id": "book_uuid_1",
+    "title": "소년이 온다",
+    "author": "한강",
+    "isbn": "9788936434120",
+    "publisher": "창비",
+    "thumbnail_url": "https://...",
+    "my_thought_count": 3,
+    "created_at": "2026-09-08T09:00:00Z"
+  }
+]
+```
+
+### 7.6 선택한 도서의 본인 작성 답변 목록 조회 (`GET /api/books/{book_id}/my-answers`)
+- **인증**: 필수 (`Depends(get_current_user)`)
+- **설명**: 특정 도서에 대해 본인(`current_user.id`)이 작성한 모든 답변 목록(원래 질문, 답변 본문, 작성일, 수정일)을 반환.
+- **Response Body (200 OK)**:
+```json
+[
+  {
+    "id": "answer_uuid_1",
+    "question_id": "question_uuid_1",
+    "question_content": "싱클레어가 알을 깨고 나오는 과정에서...",
+    "answer": "자신의 세계를 파괴하지 않고는...",
+    "created_at": "2026-09-10T14:20:00Z",
+    "updated_at": "2026-09-11T09:15:00Z"
+  }
+]
+```
+
 ---
 
 # 8. 핵심 비즈니스 로직 및 흐름 상세
@@ -446,8 +482,17 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
 3. 소유권이 확인된 경우에만 `answer` 본문과 `updated_at = NOW()`를 업데이트.
 
 ### 8.5 좋아요(추천) 및 개인 데이터 세션 정책
-- **질문 추천**: 로그인 사용자 권한을 원칙으로 하되, `question_likes` DB 테이블 도입은 후속 Phase 6에서 진행하며 당분간 프론트엔드의 `localStorage` 기반 중복 방지를 유지한다.
-- **AI 후속 토론 및 독후감**: 첫 답변 이후의 개인 토론과 독후감 데이터는 브라우저 `sessionStorage` 방식을 유지하며, 로그인 기능 안정화 후 후속 Phase 6에서 사용자 계정 DB 영구 저장으로 확장한다.
+- **질문 추천**: 로그인 사용자 권한을 원칙으로 하되, `question_likes` DB 테이블 도입은 후속 Phase 7에서 진행하며 당분간 프론트엔드의 `localStorage` 기반 중복 방지를 유지한다.
+- **AI 후속 토론 및 독후감**: 첫 답변 이후의 개인 토론과 독후감 데이터는 브라우저 `sessionStorage` 방식을 유지하며, 로그인 기능 안정화 후 후속 Phase 7에서 사용자 계정 DB 영구 저장으로 확장한다.
+
+### 8.6 마이페이지 데이터 격리 및 비동기 레이스 컨디션 방어
+1. **서버 측 소유권 강제**:
+   - `GET /api/users/me/books`와 `GET /api/books/{book_id}/my-answers`는 프론트엔드가 전달한 식별자를 신뢰하지 않고, 오직 `current_user.id`로만 필터링하여 타인 데이터 노출 및 변조를 원천 차단한다.
+   - `user_id IS NULL`인 익명 답변 및 타 사용자의 답변은 마이페이지에 일절 포함되지 않는다.
+2. **클라이언트 비동기 순서 보장 (Race Condition Guard)**:
+   - 사용자가 책 A를 클릭한 직후 책 B를 빠르게 클릭할 경우, 네트워크 지연으로 인해 늦게 도착한 책 A의 응답이 화면을 덮어쓰지 않도록 `myPageReqSeq` 시퀀스 번호를 증가시켜 최종 선택한 책의 응답만 DOM에 렌더링한다.
+3. **북클럽 수정 내용과의 동기화**:
+   - 마이페이지의 '북클럽에서 보기 ↗'를 통해 북클럽으로 이동하여 인라인으로 답변을 수정한 뒤 마이페이지로 복귀하면, 마이페이지 재진입 시 항상 최신 상태를 비동기로 조회하여 수정된 내용이 즉시 반영된다.
 
 ---
 
@@ -568,7 +613,13 @@ NEON_AUTH_JWKS_URL=https://auth.neon.tech/neondb/.../.well-known/jwks.json
   - 북클럽: 기존 북클럽 ENTER(Gemini 0회), 신규 북클럽 명시적 OPEN(최초 1회 Gemini 호출)
   - 방어: 단일 프로세스 asyncio.Lock 및 _generating_isbns 메모리 셋 동시성 보호
 
-📌 Phase 6: 후속 확장 과제 (좋아요 계정화 & 개인 토론/독후감 DB 저장) [향후 계획]
+✅ Phase 6: 마이페이지 (내 정보, 참여 도서, 쓴 생각 모아보기 및 북클럽/독후감 연결) [구현 완료]
+  - 성과: Header 사용자명 버튼화 및 #view-my-page SPA 뷰 전환 연동
+  - API: GET /api/users/me/books, GET /api/books/{book_id}/my-answers
+  - 안정성: 빠른 책 전환 레이스 컨디션 방지 (myPageReqSeq) 및 비로그인 접근 차단
+  - 연동: 북클럽 질문 아코디언 열기 및 답변 위치 스크롤, 선택 책 독후감 쓰기 바로 연결
+
+📌 Phase 7: 후속 확장 과제 (좋아요 계정화 & 개인 토론/독후감 DB 저장) [향후 계획]
   - 목표: 서비스 안정화 후 사용자 계정 기반 영구 저장으로 확장
   - 과제: question_likes DB 테이블 도입, AI 개인 대화 및 독후감 DB 저장 모델 구축
 ```

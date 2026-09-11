@@ -31,7 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
     followup: document.getElementById("view-followup"),
     reviewStyle: document.getElementById("view-review-style"),
     reviewResult: document.getElementById("view-review-result"),
-    writeEssay: document.getElementById("view-write-essay")
+    writeEssay: document.getElementById("view-write-essay"),
+    myPage: document.getElementById("view-my-page")
   };
 
   // 공개 답변 메모리 캐시 (Map: questionId → answers[])
@@ -88,6 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
       targetView = "main";
     } else if (targetView === "reviewStyle" && (!BookMateState.discussions || BookMateState.discussions.length === 0)) {
       targetView = "club";
+    } else if (targetView === "myPage" && !BookMateState.currentUser) {
+      targetView = "main";
     }
 
     // 뒤로가기 동작이므로 새로운 히스토리를 밀어넣지 않음 (pushHistory = false)
@@ -1699,7 +1702,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 이미 내용이 있고 다른 책이 전달된 경우 확인
     if (preselectedBook && writeEssayState.selectedBook && writeEssayState.selectedBook.title !== preselectedBook.title && hasAnyEssayContent()) {
       if (!confirm("책을 변경하면 작성 중인 생각과 독후감이 초기화됩니다. 변경할까요?")) {
-        switchView("writeEssay");
         return;
       }
       resetWriteEssayState();
@@ -2320,6 +2322,422 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================================================================
+  // 8. 마이페이지 (MY READING NOTES)
+  // =========================================================================
+  const myPageBackBtn = document.getElementById("my-page-back-btn");
+  const myPageAvatarInitial = document.getElementById("my-page-avatar-initial");
+  const myPageUserName = document.getElementById("my-page-user-name");
+  const myPageEmailWrap = document.getElementById("my-page-email-wrap");
+  const myPageUserEmail = document.getElementById("my-page-user-email");
+  const myPageBooksLoading = document.getElementById("my-page-books-loading");
+  const myPageBooksError = document.getElementById("my-page-books-error");
+  const myPageBooksErrorMsg = document.getElementById("my-page-books-error-msg");
+  const myPageBooksRetryBtn = document.getElementById("my-page-books-retry-btn");
+  const myPageBooksEmpty = document.getElementById("my-page-books-empty");
+  const myPageSearchBookBtn = document.getElementById("my-page-search-book-btn");
+  const myPageBooksList = document.getElementById("my-page-books-list");
+
+  const myPageThoughtsPlaceholder = document.getElementById("my-page-thoughts-placeholder");
+  const myPageSelectedBookHeader = document.getElementById("my-page-selected-book-header");
+  const myPageSelectedTitle = document.getElementById("my-page-selected-title");
+  const myPageSelectedAuthor = document.getElementById("my-page-selected-author");
+  const myPageSelectedCount = document.getElementById("my-page-selected-count");
+  const myPageWriteEssayBtn = document.getElementById("my-page-write-essay-btn");
+
+  const myPageAnswersLoading = document.getElementById("my-page-answers-loading");
+  const myPageAnswersError = document.getElementById("my-page-answers-error");
+  const myPageAnswersErrorMsg = document.getElementById("my-page-answers-error-msg");
+  const myPageAnswersRetryBtn = document.getElementById("my-page-answers-retry-btn");
+  const myPageAnswersList = document.getElementById("my-page-answers-list");
+
+  let currentMyPageBook = null;
+  let myPageReqSeq = 0;
+
+  function resetMyPageState() {
+    currentMyPageBook = null;
+    myPageReqSeq = 0;
+    if (myPageBooksList) myPageBooksList.innerHTML = "";
+    if (myPageAnswersList) {
+      myPageAnswersList.innerHTML = "";
+      myPageAnswersList.style.display = "none";
+    }
+    if (myPageSelectedBookHeader) myPageSelectedBookHeader.style.display = "none";
+    if (myPageThoughtsPlaceholder) myPageThoughtsPlaceholder.style.display = "block";
+    if (myPageBooksLoading) myPageBooksLoading.style.display = "none";
+    if (myPageBooksError) myPageBooksError.style.display = "none";
+    if (myPageBooksEmpty) myPageBooksEmpty.style.display = "none";
+    if (myPageAnswersLoading) myPageAnswersLoading.style.display = "none";
+    if (myPageAnswersError) myPageAnswersError.style.display = "none";
+  }
+
+  // 마이페이지 진입 함수
+  async function openMyPage() {
+    if (!BookMateState.currentUser) {
+      showToast("마이페이지를 확인하려면 먼저 로그인하세요.");
+      openAuthModal("login");
+      return;
+    }
+
+    const user = BookMateState.currentUser;
+    const name = user.displayName || "독자";
+    if (myPageUserName) myPageUserName.textContent = name;
+    if (myPageAvatarInitial) myPageAvatarInitial.textContent = name.slice(0, 1).toUpperCase();
+
+    if (user.email) {
+      if (myPageUserEmail) myPageUserEmail.textContent = user.email;
+      if (myPageEmailWrap) myPageEmailWrap.style.display = "flex";
+    } else {
+      if (myPageEmailWrap) myPageEmailWrap.style.display = "none";
+    }
+
+    // 첫 진입 시 책 선택 및 생각 목록은 미선택 상태
+    currentMyPageBook = null;
+    if (myPageSelectedBookHeader) myPageSelectedBookHeader.style.display = "none";
+    if (myPageThoughtsPlaceholder) myPageThoughtsPlaceholder.style.display = "block";
+    if (myPageAnswersList) {
+      myPageAnswersList.innerHTML = "";
+      myPageAnswersList.style.display = "none";
+    }
+    if (myPageAnswersLoading) myPageAnswersLoading.style.display = "none";
+    if (myPageAnswersError) myPageAnswersError.style.display = "none";
+
+    switchView("myPage");
+    await loadMyPageBooks();
+  }
+
+  // 01 내가 참여한 책 목록 로드
+  async function loadMyPageBooks() {
+    if (myPageBooksLoading) myPageBooksLoading.style.display = "block";
+    if (myPageBooksError) myPageBooksError.style.display = "none";
+    if (myPageBooksEmpty) myPageBooksEmpty.style.display = "none";
+    if (myPageBooksList) myPageBooksList.innerHTML = "";
+
+    try {
+      const books = await BookMateAPI.getMyAnsweredBooks();
+      if (myPageBooksLoading) myPageBooksLoading.style.display = "none";
+
+      if (!books || books.length === 0) {
+        if (myPageBooksEmpty) myPageBooksEmpty.style.display = "block";
+        return;
+      }
+      renderMyPageBooksList(books);
+    } catch (err) {
+      if (myPageBooksLoading) myPageBooksLoading.style.display = "none";
+      if (myPageBooksError) {
+        myPageBooksError.style.display = "block";
+        if (myPageBooksErrorMsg) {
+          myPageBooksErrorMsg.textContent = err.message || "참여한 책 목록을 불러오지 못했습니다.";
+        }
+      }
+    }
+  }
+
+  // 내가 참여한 책 카드 그리드 렌더링
+  function renderMyPageBooksList(books) {
+    if (!myPageBooksList) return;
+    myPageBooksList.innerHTML = "";
+
+    books.forEach((b) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "essay-book-card my-page-book-card";
+      card.setAttribute("aria-label", `${b.title} 선택`);
+
+      // 표지 이미지
+      const coverWrap = document.createElement("div");
+      coverWrap.className = "essay-book-cover";
+      if (b.thumbnail_url) {
+        const img = document.createElement("img");
+        img.src = b.thumbnail_url;
+        img.alt = "";
+        img.loading = "lazy";
+        img.onerror = () => {
+          coverWrap.innerHTML = "";
+          coverWrap.appendChild(createCoverPlaceholder(b.title));
+        };
+        coverWrap.appendChild(img);
+      } else {
+        coverWrap.appendChild(createCoverPlaceholder(b.title));
+      }
+
+      // 도서 정보
+      const info = document.createElement("div");
+      info.className = "essay-book-info";
+
+      const topGroup = document.createElement("div");
+      const titleEl = document.createElement("div");
+      titleEl.className = "essay-book-title";
+      titleEl.textContent = b.title;
+
+      const authorEl = document.createElement("div");
+      authorEl.className = "essay-book-author";
+      authorEl.textContent = b.author ? `${b.author} 作` : "";
+
+      topGroup.appendChild(titleEl);
+      topGroup.appendChild(authorEl);
+
+      const countEl = document.createElement("div");
+      countEl.className = "essay-book-meta";
+      const thoughtCount = b.my_thought_count || 1;
+      countEl.textContent = `내 생각 ${thoughtCount}개`;
+
+      info.appendChild(topGroup);
+      info.appendChild(countEl);
+
+      card.appendChild(coverWrap);
+      card.appendChild(info);
+
+      card.addEventListener("click", () => {
+        selectMyPageBook(b, card);
+      });
+
+      myPageBooksList.appendChild(card);
+    });
+  }
+
+  // 책 카드 선택
+  function selectMyPageBook(book, cardEl) {
+    currentMyPageBook = book;
+
+    // 모든 카드에서 selected 제거하고 현재 카드에 추가
+    if (myPageBooksList) {
+      const allCards = myPageBooksList.querySelectorAll(".my-page-book-card");
+      allCards.forEach(c => c.classList.remove("selected"));
+    }
+    if (cardEl) {
+      cardEl.classList.add("selected");
+    }
+
+    // 02 헤더 업데이트
+    if (myPageThoughtsPlaceholder) myPageThoughtsPlaceholder.style.display = "none";
+    if (myPageSelectedBookHeader) myPageSelectedBookHeader.style.display = "flex";
+    if (myPageSelectedTitle) myPageSelectedTitle.textContent = book.title;
+    if (myPageSelectedAuthor) myPageSelectedAuthor.textContent = book.author ? `${book.author} 作` : "";
+    if (myPageSelectedCount) {
+      const count = book.my_thought_count || 1;
+      myPageSelectedCount.textContent = `총 ${count}개의 생각`;
+    }
+
+    loadMyPageAnswers(book);
+  }
+
+  // 02 선택한 책의 내 생각 목록 비동기 로드 (레이스 컨디션 방지)
+  async function loadMyPageAnswers(book) {
+    const reqSeq = ++myPageReqSeq;
+    if (myPageAnswersLoading) myPageAnswersLoading.style.display = "block";
+    if (myPageAnswersError) myPageAnswersError.style.display = "none";
+    if (myPageAnswersList) {
+      myPageAnswersList.innerHTML = "";
+      myPageAnswersList.style.display = "none";
+    }
+
+    try {
+      const answers = await BookMateAPI.getMyAnswersForBook(book.id);
+      // 이전 요청의 응답이 늦게 도착한 경우 무시
+      if (reqSeq !== myPageReqSeq) return;
+
+      if (myPageAnswersLoading) myPageAnswersLoading.style.display = "none";
+      renderMyPageAnswers(answers, book);
+    } catch (err) {
+      if (reqSeq !== myPageReqSeq) return;
+      if (myPageAnswersLoading) myPageAnswersLoading.style.display = "none";
+      if (myPageAnswersError) {
+        myPageAnswersError.style.display = "block";
+        if (myPageAnswersErrorMsg) {
+          myPageAnswersErrorMsg.textContent = err.message || "생각 목록을 불러오지 못했습니다.";
+        }
+      }
+    }
+  }
+
+  // 내 생각 목록 렌더링
+  function renderMyPageAnswers(answers, book) {
+    if (!myPageAnswersList) return;
+    myPageAnswersList.innerHTML = "";
+
+    if (!answers || answers.length === 0) {
+      const emptyCard = document.createElement("div");
+      emptyCard.className = "essay-no-answers-card";
+      emptyCard.innerHTML = `<p class="no-answers-text">이 책에 기록된 생각이 없습니다.</p>`;
+      myPageAnswersList.appendChild(emptyCard);
+      myPageAnswersList.style.display = "block";
+      return;
+    }
+
+    // 실제 본인 답변 개수로 동기화
+    if (myPageSelectedCount) {
+      myPageSelectedCount.textContent = `총 ${answers.length}개의 생각`;
+    }
+
+    answers.forEach((item, idx) => {
+      const answerCard = document.createElement("div");
+      answerCard.className = "my-page-answer-card";
+
+      // 1. 질문 내용
+      const qBox = document.createElement("div");
+      qBox.className = "my-page-q-box";
+      const qTag = document.createElement("span");
+      qTag.className = "my-page-q-tag";
+      qTag.textContent = `Q${idx + 1}`;
+      const qText = document.createElement("div");
+      qText.className = "my-page-q-text";
+      qText.textContent = item.question_content || "토론 질문";
+      qBox.appendChild(qTag);
+      qBox.appendChild(qText);
+      answerCard.appendChild(qBox);
+
+      // 2. 내 답변 본문 (전체 내용 표시, 고정 높이로 자르지 않음)
+      const aBox = document.createElement("div");
+      aBox.className = "my-page-a-box";
+      const aText = document.createElement("div");
+      aText.className = "my-page-a-text";
+      aText.textContent = item.answer;
+      aBox.appendChild(aText);
+      answerCard.appendChild(aBox);
+
+      // 3. 하단 메타 및 액션
+      const footer = document.createElement("div");
+      footer.className = "my-page-answer-footer";
+
+      const dateWrap = document.createElement("div");
+      dateWrap.className = "my-page-answer-date-wrap";
+
+      const createdDateStr = BookMateComponents._formatDate(item.created_at);
+      if (createdDateStr) {
+        const createdSpan = document.createElement("span");
+        createdSpan.className = "my-page-date-created";
+        createdSpan.textContent = createdDateStr;
+        dateWrap.appendChild(createdSpan);
+      }
+
+      if (item.updated_at) {
+        const updatedDateStr = BookMateComponents._formatDate(item.updated_at);
+        const updatedSpan = document.createElement("span");
+        updatedSpan.className = "my-page-date-updated";
+        updatedSpan.textContent = updatedDateStr ? `수정됨 (${updatedDateStr})` : "수정됨";
+        dateWrap.appendChild(updatedSpan);
+      }
+      footer.appendChild(dateWrap);
+
+      // 북클럽에서 보기 ↗ 버튼
+      const gotoClubBtn = document.createElement("button");
+      gotoClubBtn.type = "button";
+      gotoClubBtn.className = "my-page-goto-club-btn";
+      gotoClubBtn.innerHTML = `<span>북클럽에서 보기</span> <span class="goto-arrow">↗</span>`;
+      gotoClubBtn.setAttribute("aria-label", `${book.title} 북클럽의 해당 질문으로 이동`);
+
+      gotoClubBtn.addEventListener("click", () => {
+        handleGoToClubFromMyPage(book, item.question_id, item.id);
+      });
+
+      footer.appendChild(gotoClubBtn);
+      answerCard.appendChild(footer);
+
+      myPageAnswersList.appendChild(answerCard);
+    });
+
+    myPageAnswersList.style.display = "flex";
+  }
+
+  // 마이페이지에서 북클럽 이동 및 특정 질문 아코디언 열기
+  async function handleGoToClubFromMyPage(book, questionId, answerId) {
+    if (!book || !book.id) return;
+
+    // 책 변경 시 상태 정리 (기존 executeEnterBook 로직과 통일)
+    const prevBookId = BookMateState.currentBook ? BookMateState.currentBook.id : null;
+    if (prevBookId && prevBookId !== book.id) {
+      BookMateState.discussions = [];
+      BookMateState.generatedReview = null;
+      BookMateState.currentQuestion = null;
+      answersCache.clear();
+    }
+
+    BookMateState.currentBook = book;
+    BookMateState.saveToSession();
+
+    renderBookClubView(book, []);
+    switchView("club");
+
+    try {
+      const questions = await BookMateAPI.getBookQuestions(book.id);
+      renderQuestionsLists(questions);
+
+      const targetQuestion = questions.find(q => String(q.id) === String(questionId));
+      if (!targetQuestion) {
+        showToast("연결된 질문을 찾을 수 없어 북클럽 메인으로 이동했습니다.");
+        return;
+      }
+
+      const qRow = document.querySelector(`.question-row-item[data-question-id="${questionId}"]`);
+      if (!qRow) {
+        showToast("해당 질문 위치를 찾을 수 없어 북클럽 메인으로 이동했습니다.");
+        return;
+      }
+
+      const discussBtn = qRow.querySelector(".discuss-link-btn");
+      handleToggleAccordion(targetQuestion, qRow, discussBtn);
+
+      setTimeout(() => {
+        qRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // 패널 답변 로드 후 본인 답변 카드로 스크롤
+        let attempts = 0;
+        const checkAnswerEl = setInterval(() => {
+          attempts++;
+          const ansEl = document.querySelector(`.quote-item[data-answer-id="${answerId}"]`);
+          if (ansEl) {
+            clearInterval(checkAnswerEl);
+            ansEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            ansEl.classList.add("highlight-target-answer");
+            setTimeout(() => ansEl.classList.remove("highlight-target-answer"), 2500);
+          } else if (attempts > 15) {
+            clearInterval(checkAnswerEl);
+          }
+        }, 150);
+      }, 150);
+    } catch (err) {
+      showToast(err.message || "북클럽 정보를 불러오지 못했습니다.");
+    }
+  }
+
+  // 마이페이지 이벤트 리스너 연결
+  if (myPageBackBtn) {
+    myPageBackBtn.addEventListener("click", () => {
+      switchView("main");
+    });
+  }
+
+  if (myPageWriteEssayBtn) {
+    myPageWriteEssayBtn.addEventListener("click", () => {
+      if (currentMyPageBook) {
+        openWriteEssayFlow(currentMyPageBook);
+      }
+    });
+  }
+
+  if (myPageBooksRetryBtn) {
+    myPageBooksRetryBtn.addEventListener("click", loadMyPageBooks);
+  }
+
+  if (myPageAnswersRetryBtn) {
+    myPageAnswersRetryBtn.addEventListener("click", () => {
+      if (currentMyPageBook) loadMyPageAnswers(currentMyPageBook);
+    });
+  }
+
+  if (myPageSearchBookBtn) {
+    myPageSearchBookBtn.addEventListener("click", () => {
+      switchView("main");
+      const openSearchBtn = document.getElementById("main-search-books-btn");
+      if (openSearchBtn) openSearchBtn.click();
+      const input = document.getElementById("book-title-input");
+      if (input) {
+        setTimeout(() => input.focus(), 150);
+      }
+    });
+  }
+
+  // =========================================================================
   // 헤더 인증 UI 및 로그인 / 회원가입 Modal
   // =========================================================================
   const headerAuthArea = document.getElementById("header-auth-area");
@@ -2477,6 +2895,12 @@ document.addEventListener("DOMContentLoaded", () => {
     headerLoginBtn.addEventListener("click", () => openAuthModal("login"));
   }
 
+  if (headerUserName) {
+    headerUserName.addEventListener("click", () => {
+      openMyPage();
+    });
+  }
+
   if (switchToSignupBtn) {
     switchToSignupBtn.addEventListener("click", () => switchAuthView("signup"));
   }
@@ -2623,36 +3047,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-        await BookMateAPI.signUp(name, email, password);
-        // 회원가입 완료 후 바로 로그인 상태로 만들지 않고 로그아웃(세션 정리) 후 로그인 화면으로 전환
-        await BookMateAPI.signOut().catch(() => { });
-        BookMateState.clearCurrentUser();
-        updateHeaderAuthUI(null);
+        const user = await BookMateAPI.signUp(name, email, password);
+        // 회원가입 성공 즉시 로그인 상태로 유지하고 모달 닫기
+        BookMateState.setCurrentUser(user);
+        updateHeaderAuthUI(user);
+        closeAuthModal(true);
 
-        // 성공 시 제출 상태 먼저 해제 후 즉시 로그인 화면으로 강제 전환
-        isAuthSubmitting = false;
-        if (signupSubmitBtn) {
-          signupSubmitBtn.disabled = false;
-          signupSubmitBtn.textContent = "CREATE ACCOUNT →";
-        }
-
-        // 로그인 화면으로 전환 및 가입한 이메일 자동 채우기
-        if (loginEmailInput) {
-          loginEmailInput.value = email;
-        }
-        if (loginPasswordInput) {
-          loginPasswordInput.value = "";
-        }
-        switchAuthView("login", true);
-
-        // 모바일 스크롤 위치 초기화 및 안내
-        const modalBody = authModal ? authModal.querySelector(".auth-modal-card") : null;
-        if (modalBody) modalBody.scrollTop = 0;
-        showToast("회원가입이 완료되었습니다. 로그인해 주세요.");
+        const displayName = (user && user.name) || name || "독자";
+        showToast(`${displayName}님, 환영합니다!`);
       } catch (err) {
         if (signupErrorMsg) {
           signupErrorMsg.textContent = formatAuthErrorMessage(err, "signup");
           signupErrorMsg.style.display = "block";
+          // 에러 발생 시 모바일 화면에서 메시지가 바로 보이도록 상단 스크롤
+          const modalBody = authModal ? authModal.querySelector(".auth-modal-card") : null;
+          if (modalBody) modalBody.scrollTop = 0;
         }
       } finally {
         isAuthSubmitting = false;
@@ -2676,10 +3085,14 @@ document.addEventListener("DOMContentLoaded", () => {
         BookMateState.clearCurrentUser();
         updateHeaderAuthUI(null);
 
-        // 인증 해제에 따른 공개 답변 캐시 및 전용 독후감 상태 초기화
+        // 인증 해제에 따른 공개 답변 캐시 및 전용 독후감/마이페이지 상태 초기화
         answersCache.clear();
         resetWriteEssayState();
+        resetMyPageState();
         if (views.writeEssay && views.writeEssay.classList.contains("active")) {
+          switchView("main");
+        }
+        if (views.myPage && views.myPage.classList.contains("active")) {
           switchView("main");
         }
 
@@ -2703,6 +3116,15 @@ document.addEventListener("DOMContentLoaded", () => {
       updateHeaderAuthUI(BookMateState.currentUser);
       if (headerAuthArea) {
         headerAuthArea.classList.remove("is-loading");
+      }
+      // 세션 복원 후 URL 해시가 #myPage인 경우 안전 연결
+      if (window.location.hash.replace("#", "") === "myPage") {
+        if (BookMateState.currentUser) {
+          openMyPage();
+        } else {
+          switchView("main");
+          openAuthModal("login");
+        }
       }
     }
   })();
