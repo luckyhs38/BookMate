@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOOKMATE — 같은 책, 다른 생각</title>
+  <meta name="description"
+    content="책 속에서 발견한 질문에 답하고, 같은 책을 읽은 다른 독자의 깊은 시선을 마주하세요. 나만의 단단한 생각을 한 편의 에세이로 완성하는 공개 북클럽.">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+  <div class="app-container">
+
+    <!-- ============================================================= -->
+    <!-- Header — Minimal Masthead                                      -->
+    <!-- ============================================================= -->
+    <header class="app-header">
+      <div class="brand-logo" id="app-brand-logo">
+        <span>BOOKMATE</span>
+        <span class="brand-tag">READ · THINK · DISCUSS</span>
+      </div>
+      <div class="header-right-actions">
+        <div id="header-auth-area" class="header-auth-area is-loading">
+          <button type="button" class="header-auth-btn" id="header-login-btn">
+            LOGIN →
+          </button>
+          <div id="header-user-group" class="header-user-group" style="display: none;">
+            <span id="header-user-name" class="header-user-name"></span>
+            <button type="button" class="header-auth-btn" id="header-logout-btn">
+              LOGOUT →
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 1: 메인 — BOOKMATE BOOK TOWN (에디토리얼 2단 구조)        -->
+    <!-- ============================================================= -->
+    <main id="view-main" class="view-section active">
+
+      <!-- BOOK TOWN STAGE: 왼쪽 소개 텍스트 (약 34%) + 오른쪽 메인 일러스트 (약 66%) -->
+      <div class="town-stage">
+
+        <!-- 왼쪽 영역: 브랜드 / 소개 타이포그래피 -->
+        <div class="town-hero">
+          <p class="hero-tagline">CONTEMPORARY BOOK CLUB</p>
+          <h1 class="town-hero-title">같은 책.<br>다른 생각.</h1>
+          <p class="town-hero-desc">
+            책 속에서 발견한 질문에 답하고,<br>
+            같은 책을 읽은 다른 독자의 시선을 마주하며<br>
+            나만의 단단한 생각을 완성하세요.
+          </p>
+          <div class="town-hero-tagline">READ · THINK · DISCUSS</div>
+        </div>
+
+        <!-- 오른쪽 영역: BOOKMATE WORLD 메인 비주얼 블록 + 오버레이 마커 -->
+        <div class="bookmate-world" id="bookmate-world">
+
+          <!-- 일러스트 비주얼 레이어 -->
+          <div class="world-illustration-wrap">
+            <img src="/static/images/bookmate-world.jpg" alt="" class="world-illustration" aria-hidden="true">
+          </div>
+
+          <!-- HTML 인터랙티브 오버레이 레이어 -->
+          <div class="world-actions" aria-label="독서 마을 공간 안내">
+
+            <!-- 01: OPEN BOOK CLUBS 공간 마커 (심플 오버레이) -->
+            <button type="button" class="world-spot spot-clubs" id="spot-clubs" aria-label="01 열린 북클럽">
+              <div class="marker-circle">01</div>
+              <div class="marker-card">
+                <div class="marker-card-top">
+                  <span class="marker-card-title">열린 북클럽</span>
+                  <span class="marker-card-arrow">↓</span>
+                </div>
+                <p class="marker-card-sub">지금 열려 있는 대화에 참여하세요.</p>
+              </div>
+            </button>
+
+            <!-- 02: SEARCH BOOKS 공간 마커 -->
+            <button type="button" class="world-spot spot-search" id="marker-search" aria-label="02 새로운 책 찾기">
+              <div class="marker-circle">02</div>
+              <div class="marker-card">
+                <div class="marker-card-top">
+                  <span class="marker-card-title">새로운 책 찾기</span>
+                  <span class="marker-card-arrow">→</span>
+                </div>
+                <p class="marker-card-sub">찾고 있는 책을 검색해보세요. <span class="marker-card-arrow-inline">→</span></p>
+              </div>
+            </button>
+
+            <!-- 03: WRITE ESSAY 공간 마커 -->
+            <button type="button" class="world-spot spot-essay" id="marker-essay" aria-label="03 나의 생각 쓰기">
+              <div class="marker-circle">03</div>
+              <div class="marker-card">
+                <div class="marker-card-top">
+                  <span class="marker-card-title">나의 생각 쓰기</span>
+                  <span class="marker-card-arrow">→</span>
+                </div>
+                <p class="marker-card-sub">나만의 글로 완성해보세요. <span class="marker-card-arrow-inline">→</span></p>
+              </div>
+            </button>
+
+            <!-- OPEN BOOK CLUBS: Hero 바로 아래 얇고 작은 Horizontal Book Strip -->
+            <section class="open-clubs-strip" style="display: none;" id="open-clubs-section" aria-label="열린 북클럽 목록">
+              <div class="strip-header">
+                <span class="strip-title">OPEN BOOK CLUBS</span>
+                <span class="strip-subtitle">지금 대화가 진행 중인 책</span>
+                <button type="button" id="close-open-clubs-btn" class="panel-close-btn"
+                  aria-label="열린 북클럽 목록 닫기">✕</button>
+              </div>
+
+              <!-- Loading 상태 -->
+              <div id="clubs-loading" class="clubs-loading-state" aria-live="polite" aria-busy="true">
+                <div class="clubs-loading-line"></div>
+              </div>
+
+              <!-- 실제 책 목록 (작은 수평 나열) -->
+              <div id="clubs-grid" class="book-clubs-grid" style="display: none;"></div>
+              <div id="bookshelf-rail" style="display: none;"></div>
+
+              <!-- Error 상태 -->
+              <div id="clubs-error" class="clubs-error-state" style="display: none;" role="alert">
+                <p class="clubs-error-msg">목록을 불러오지 못했습니다.</p>
+                <button type="button" id="clubs-retry-btn" class="clubs-retry-btn">다시 시도 →</button>
+              </div>
+
+              <!-- Empty 상태 -->
+              <div id="clubs-empty" class="clubs-empty-state" style="display: none;">
+                <p>아직 열린 북클럽이 없습니다.</p>
+              </div>
+            </section>
+
+            <!-- 기존 검색 패널 (SEARCH BOOKS 버튼 클릭 후 표시) -->
+            <div id="main-search-panel" style="display: none; margin-top: var(--space-xl);">
+              <div class="search-panel-header">
+                <span class="search-panel-title">SEARCH BOOKS</span>
+                <button type="button" id="close-search-panel-btn" class="panel-close-btn"
+                  aria-label="도서 검색창 닫기">✕</button>
+              </div>
+              <div id="book-search-input-group" class="form-group">
+                <label class="form-label" for="book-title-input">BOOK TITLE / 책 제목</label>
+                <div class="search-input-inline-wrap">
+                  <input type="text" id="book-title-input" class="form-input-editorial search-input-field"
+                    placeholder="아몬드, 데미안, 이방인…" autocomplete="off">
+                  <button type="button" id="book-search-btn" class="search-inline-btn">
+                    SEARCH →
+                  </button>
+                </div>
+              </div>
+
+              <div id="search-results-area" style="display: none;">
+                <div id="search-results-header" class="section-label" style="margin-bottom: var(--space-md);">
+                  <span>SEARCH RESULTS</span>
+                  <span class="section-label-count" id="search-results-count"></span>
+                </div>
+                <div id="search-results-list"></div>
+
+                <div id="manual-entry-form-container" style="display: none; margin-top: var(--space-lg);">
+                  <div class="section-label" style="margin-bottom: var(--space-md);">
+                    <span>DIRECT ENTRY / 직접 입력</span>
+                  </div>
+                  <div class="editorial-form">
+                    <div class="form-group" style="margin-bottom: var(--space-lg);">
+                      <label class="form-label" for="book-author-input">AUTHOR / 작가</label>
+                      <input type="text" id="book-author-input" class="form-input-editorial"
+                        placeholder="손원평, 헤르만 헤세, 알베르 카뮈…" autocomplete="off">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="direct-book-title-input">BOOK TITLE / 책 제목</label>
+                      <input type="text" id="direct-book-title-input" class="form-input-editorial"
+                        placeholder="책 제목을 직접 입력해 주세요" autocomplete="off">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="search-loading" style="display: none;"></div>
+
+              <div class="form-group" id="book-memo-group" style="margin-top: var(--space-xl);">
+                <label class="form-label" for="book-memo-input">
+                  MEMO / 기억에 남는 장면 <span class="optional">(선택)</span>
+                </label>
+                <textarea id="book-memo-input" class="form-textarea-editorial"
+                  placeholder="기억에 남는 문장이나 장면을 남겨주시면 AI가 더 깊이 있는 토론 질문을 준비합니다."></textarea>
+              </div>
+
+              <div class="form-submit" style="margin-top: var(--space-xl);">
+                <button type="button" id="enter-book-club-btn" class="btn btn-primary btn-block">
+                  ENTER BOOK CLUB →
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+
+
+      <!-- 비로그인 CTA 안내 (Hero/Strip 바로 다음 40~60px 간격) -->
+      <div id="main-guest-cta" class="main-guest-cta" style="display: none;">
+        <p class="guest-cta-text">새로운 북클럽을 열거나 토론에 참여하려면 로그인하세요.</p>
+        <button type="button" id="main-guest-login-btn" class="main-guest-login-btn">
+          LOGIN →
+        </button>
+      </div>
+
+      <div id="main-loading" style="display: none;"></div>
+    </main>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 2: 책별 공개 북클럽                                       -->
+    <!-- ============================================================= -->
+    <section id="view-club" class="view-section">
+      <div id="club-book-banner" class="book-masthead"></div>
+
+      <div id="club-review-action-box"
+        style="display: none; padding: 20px 0; margin-bottom: 24px; border-bottom: 1px dashed var(--border-medium);">
+        <p id="club-discussion-count"
+          style="font-size: 0.82rem; font-weight: 600; color: var(--accent-burgundy); margin-bottom: 10px;"></p>
+        <button type="button" id="club-start-review-btn" class="btn btn-burgundy btn-block">
+          지금까지 기록한 생각으로 독후감 만들기 →
+        </button>
+      </div>
+
+      <!-- 토론 주제 (AI 추천 질문) -->
+      <div id="ai-questions-section" style="margin-bottom: 40px;">
+        <div class="section-label">
+          <span>DISCUSSION TOPICS</span>
+          <span class="section-label-count">토론 주제</span>
+        </div>
+        <div id="ai-questions-list"></div>
+      </div>
+
+      <!-- 독자가 만든 질문 -->
+      <div id="user-questions-section">
+        <div class="section-label">
+          <span>READERS' INQUIRIES</span>
+          <button type="button" id="add-question-toggle-btn" class="header-action-btn"
+            style="padding: 2px 10px; font-size: 0.7rem;">
+            + 질문 제안
+          </button>
+        </div>
+
+        <!-- 질문 추가 폼 -->
+        <div id="add-question-form-container"
+          style="display: none; padding: 20px 0 30px; border-bottom: 1px solid var(--border-dark);">
+          <form id="add-question-form">
+            <div class="form-group">
+              <label class="form-label" for="new-question-content-input">새로운 토론 질문 제안</label>
+              <textarea id="new-question-content-input" class="form-textarea-editorial"
+                placeholder="다른 독자들과 함께 나누고 싶은 질문을 적어주세요." required></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: var(--space-md);">
+              <button type="button" id="cancel-add-question-btn" class="btn btn-secondary">취소</button>
+              <button type="submit" class="btn btn-primary">질문 등록하기</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="user-questions-list"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 3: 질문 토론                                              -->
+    <!-- ============================================================= -->
+    <section id="view-discussion" class="view-section">
+      <button type="button" id="back-to-club-btn" class="btn btn-secondary"
+        style="margin-bottom: 24px; padding: 6px 14px; font-size: 0.75rem;">
+        ← BACK TO CLUB INDEX
+      </button>
+
+      <div id="discussion-book-banner"
+        style="font-family: var(--font-sans); font-size: 0.68rem; letter-spacing: 0.14em; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+      </div>
+
+      <div class="selected-question-hero">
+        <div class="selected-question-tag">TOPIC OF DISCUSSION</div>
+        <h2 class="selected-question-title" id="current-question-text"></h2>
+      </div>
+
+      <!-- 다른 독자의 생각 -->
+      <div style="margin-bottom: 48px;">
+        <div class="section-label">
+          <span>READERS' PERSPECTIVES</span>
+          <span class="section-label-count">공개된 생각들</span>
+        </div>
+        <div id="public-answers-list"></div>
+      </div>
+
+      <!-- 내 생각 입력 -->
+      <div style="padding-top: 24px; border-top: 1px solid var(--border-dark);">
+        <div class="section-label">
+          <span>YOUR THOUGHTS</span>
+          <span class="section-label-count">나의 생각 작성</span>
+        </div>
+
+        <form id="discussion-answer-form" style="margin-top: 20px;">
+          <div class="form-group">
+            <textarea id="my-answer-input" class="form-textarea-editorial" style="min-height: 120px;"
+              placeholder="이 질문에 대한 나만의 솔직한 생각을 자유롭게 적어보세요." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="is-public-checkbox">
+              <span>이 답변은 다른 독자에게 공개됩니다.</span>
+            </label>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary btn-block">
+              SUBMIT &amp; GET AI FOLLOW-UP →
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 4: AI 후속 질문                                           -->
+    <!-- ============================================================= -->
+    <section id="view-followup" class="view-section">
+      <div style="padding-bottom: 16px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 24px;">
+        <div
+          style="font-family: var(--font-sans); font-size: 0.65rem; letter-spacing: 0.18em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+          YOUR PREVIOUS THOUGHT</div>
+        <div id="my-answer-preview"
+          style="font-family: var(--font-kr-serif); font-size: 1rem; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap;">
+        </div>
+      </div>
+
+      <div id="followup-loading-box" style="display: none;">
+        <div class="state-container">
+          <div class="spinner-line"></div>
+          <p class="empty-desc">Gemini가 작성해 주신 생각을 바탕으로 질문을 확장하고 있습니다…</p>
+        </div>
+      </div>
+
+      <div id="followup-content-box">
+        <div class="host-prompt-box">
+          <div class="host-tag">BOOKMATE / THE HOST'S INQUIRY</div>
+          <div id="followup-question-text" class="host-question-text"></div>
+        </div>
+
+        <form id="followup-answer-form" style="margin-top: 24px;">
+          <div class="form-group">
+            <label class="form-label" for="followup-answer-input">YOUR DEEPER PERSPECTIVE / 확장된 생각</label>
+            <textarea id="followup-answer-input" class="form-textarea-editorial" style="min-height: 120px;"
+              placeholder="후속 질문을 마주하며 새롭게 떠오른 생각을 적어보세요." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            RECORD MY THOUGHT →
+          </button>
+        </form>
+      </div>
+
+      <div id="followup-success-box" style="display: none; text-align: center; padding: 40px 0;">
+        <h3 style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 600; margin-bottom: 8px;">생각이 안전하게
+          기록되었습니다.</h3>
+        <p id="followup-discussion-summary"
+          style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 28px;"></p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; max-width: 440px; margin: 0 auto;">
+          <button type="button" id="followup-review-btn" class="btn btn-burgundy btn-block">
+            지금까지의 생각으로 독후감 만들기 →
+          </button>
+          <button type="button" id="followup-other-questions-btn" class="btn btn-secondary btn-block">
+            ← 다른 질문 더 이야기하기
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 5: 독후감 스타일 선택                                     -->
+    <!-- ============================================================= -->
+    <section id="view-review-style" class="view-section">
+      <span class="hero-tagline">MONOGRAPH / ESSAY</span>
+      <h2 class="hero-title" style="font-size: 2.2rem; margin-bottom: 8px;">독후감 스타일 선택</h2>
+      <p id="review-discussions-count"
+        style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: var(--space-xl);"></p>
+
+      <div class="style-editorial-grid">
+        <div class="style-editorial-card selected" data-style="자연스러운 개인 감상">
+          <div class="name">자연스러운 개인 감상</div>
+          <div class="desc">진솔하고 편안한 1인칭 독서 에세이 스타일</div>
+        </div>
+        <div class="style-editorial-card" data-style="학교 과제">
+          <div class="name">학교 과제 및 리포트</div>
+          <div class="desc">서론-본론-결론이 명확한 단정한 논평 스타일</div>
+        </div>
+        <div class="style-editorial-card" data-style="블로그 후기">
+          <div class="name">블로그 리뷰</div>
+          <div class="desc">독자와 소통하는 가독성 높은 감상평 스타일</div>
+        </div>
+        <div class="style-editorial-card" data-style="진지한 비평">
+          <div class="name">비평 및 작품 분석</div>
+          <div class="desc">작품의 주제 의식과 인물의 딜레마를 심도 있게 탐구</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button type="button" id="cancel-review-btn" class="btn btn-secondary" style="flex: 1;">돌아가기</button>
+        <button type="button" id="generate-review-btn" class="btn btn-primary" style="flex: 2;">
+          GENERATE ESSAY →
+        </button>
+      </div>
+
+      <div id="review-style-loading" style="display: none; margin-top: 24px;"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 6: 독후감 결과                                            -->
+    <!-- ============================================================= -->
+    <section id="view-review-result" class="view-section">
+      <div class="essay-container">
+        <div class="essay-header">
+          <div class="essay-label">READERS' MONOGRAPH</div>
+          <h2 class="essay-title" id="review-result-book-title">나의 독후감</h2>
+          <div class="essay-byline">COMPOSED FROM YOUR PERSONAL DIALOGUE</div>
+        </div>
+
+        <article id="review-content-text" class="essay-body"></article>
+
+        <hr class="editorial-divider-dark">
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+          <button type="button" id="copy-review-btn" class="btn btn-burgundy btn-block">
+            독후감 본문 복사하기
+          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="regenerate-review-btn" class="btn btn-secondary" style="flex: 1;">
+              스타일 변경 / 다시 생성
+            </button>
+            <button type="button" id="review-other-questions-btn" class="btn btn-secondary" style="flex: 1;">
+              다른 질문 참여하기
+            </button>
+          </div>
+          <button type="button" id="start-new-book-btn" class="btn btn-secondary btn-block"
+            style="color: var(--text-muted); border-color: var(--border-hairline); margin-top: 12px;">
+            새로운 책 시작하기
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- VIEW 7: 전용 독후감 작성 화면 (READ · THINK · WRITE)             -->
+    <!-- ============================================================= -->
+    <section id="view-write-essay" class="view-section">
+      <div class="write-essay-container">
+
+        <!-- 상단 네비게이션: 메인으로 버튼 -->
+        <div class="write-essay-nav">
+          <button type="button" id="write-essay-back-btn" class="btn btn-secondary write-essay-back-btn">
+            ← 메인으로
+          </button>
+        </div>
+
+        <!-- 화면 상단 에디토리얼 타이포그래피 -->
+        <header class="write-essay-header">
+          <div class="write-essay-tag">READ · THINK · WRITE</div>
+          <h1 class="write-essay-title">나의 생각이,<br>한 편의 글이 되도록.</h1>
+          <p class="write-essay-desc">
+            책 속에서 발견한 생각을 모아<br>
+            나만의 독후감을 완성해 보세요.
+          </p>
+
+          <!-- 진행 단계 표시 (현재 진행 상태 안내용) -->
+          <div class="write-essay-steps-indicator" aria-label="진행 단계">
+            <div class="step-indicator-item active" id="essay-step-indicator-1">
+              <span class="step-badge">01</span>
+              <span class="step-name">책 선택</span>
+            </div>
+            <span class="step-arrow" aria-hidden="true">→</span>
+            <div class="step-indicator-item" id="essay-step-indicator-2">
+              <span class="step-badge">02</span>
+              <span class="step-name">내 생각 선택</span>
+            </div>
+            <span class="step-arrow" aria-hidden="true">→</span>
+            <div class="step-indicator-item" id="essay-step-indicator-3">
+              <span class="step-badge">03</span>
+              <span class="step-name">독후감 쓰기</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- ========================================================= -->
+        <!-- 01 책 선택 단계                                             -->
+        <!-- ========================================================= -->
+        <div id="write-essay-step-1" class="essay-flow-step">
+          <!-- 선택 전: 책 선택 안내 및 목록 -->
+          <div id="write-essay-step-1-chooser">
+            <div class="step-header">
+              <span class="step-circle-num">01</span>
+              <div class="step-header-text">
+                <h2 class="step-title">어떤 책에 대해 쓸까요?</h2>
+                <p class="step-subtitle">내 생각을 남긴 책부터 골라보세요.</p>
+              </div>
+            </div>
+
+            <!-- 내 생각을 남긴 책 목록 -->
+            <div id="write-essay-my-books-loading" class="essay-loading-state" style="display: none;">
+              <div class="clubs-loading-line"></div>
+              <p class="essay-loading-text">내가 생각을 기록한 책을 불러오고 있습니다…</p>
+            </div>
+
+            <div id="write-essay-my-books-list" class="essay-books-grid"></div>
+
+            <div id="write-essay-my-books-empty" class="essay-empty-notice" style="display: none;">
+              <p>아직 생각을 남긴 책이 없어요.</p>
+              <p class="sub-text">아래에서 책을 검색하여 자유롭게 독후감을 작성할 수 있습니다.</p>
+            </div>
+
+            <!-- 다른 책 검색 영역 (Kakao Book Search) -->
+            <div class="essay-search-section">
+              <div class="essay-search-header">
+                <span class="essay-search-label">다른 책 검색하기</span>
+              </div>
+              <div class="search-input-inline-wrap">
+                <input type="text" id="write-essay-search-input" class="form-input-editorial search-input-field"
+                  placeholder="새로운 책 제목 검색 (예: 아몬드, 데미안)" autocomplete="off">
+                <button type="button" id="write-essay-search-btn" class="search-inline-btn">
+                  SEARCH →
+                </button>
+              </div>
+
+              <div id="write-essay-search-loading" class="essay-loading-state" style="display: none; padding: 16px 0;">
+                <div class="clubs-loading-line"></div>
+              </div>
+
+              <div id="write-essay-search-results" class="essay-search-results-list" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- 선택 완료 후: 선택된 책 요약 카드 + 책 변경 버튼 -->
+          <div id="write-essay-selected-book-summary" class="selected-book-banner" style="display: none;">
+            <div class="selected-book-left">
+              <div id="write-essay-selected-cover-wrap" class="selected-book-cover-wrap"></div>
+              <div class="selected-book-info">
+                <span class="selected-book-tag">선택된 책</span>
+                <h3 id="write-essay-selected-title" class="selected-book-title"></h3>
+                <p id="write-essay-selected-author" class="selected-book-author"></p>
+              </div>
+            </div>
+            <button type="button" id="write-essay-change-book-btn" class="btn btn-secondary selected-book-change-btn">
+              책 변경 ↻
+            </button>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 02 내 생각 선택 단계 (초기 hidden)                          -->
+        <!-- ========================================================= -->
+        <div id="write-essay-step-2" class="essay-flow-step" style="display: none;">
+          <div class="step-header">
+            <span class="step-circle-num">02</span>
+            <div class="step-header-text">
+              <h2 class="step-title">어떤 생각을 담을까요?</h2>
+              <p id="write-essay-step-2-subtitle" class="step-subtitle">독후감에 담고 싶은 생각을 선택하세요. 여러 개 선택할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <!-- 저장된 답변 로딩 -->
+          <div id="write-essay-answers-loading" class="essay-loading-state" style="display: none;">
+            <div class="clubs-loading-line"></div>
+            <p class="essay-loading-text">기록해 둔 내 생각을 불러오는 중입니다…</p>
+          </div>
+
+          <!-- 답변이 없는 경우 안내 -->
+          <div id="write-essay-no-answers-box" class="essay-no-answers-card" style="display: none;">
+            <p class="no-answers-text">아직 남긴 생각이 없어요. 자유롭게 작성해 주세요.</p>
+          </div>
+
+          <!-- 저장된 답변 목록 (체크박스) -->
+          <div id="write-essay-answers-container" style="display: none;">
+            <div class="answers-action-bar">
+              <span id="write-essay-answers-count-label" class="answers-count-label"></span>
+              <button type="button" id="write-essay-direct-write-btn" class="direct-write-link-btn">
+                + 직접 새로 쓰기
+              </button>
+            </div>
+            <div id="write-essay-answers-list" class="essay-answers-list"></div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 03 생각 작성·보완 단계 (초기 hidden)                        -->
+        <!-- ========================================================= -->
+        <div id="write-essay-step-3" class="essay-flow-step" style="display: none;">
+          <div class="step-header">
+            <span class="step-circle-num">03</span>
+            <div class="step-header-text">
+              <h2 class="step-title">내 생각을 다듬어 주세요.</h2>
+              <p class="step-subtitle">문장이 완벽하지 않아도 괜찮아요. 느낀 그대로 적어주세요.</p>
+            </div>
+          </div>
+
+          <!-- 생각 편집 영역 (선택된 생각들 textarea 또는 자유 작성 textarea) -->
+          <div id="write-essay-thought-editors-wrap" class="thought-editors-wrap">
+            <!-- 동적으로 답변별 textarea 주입 -->
+            <div id="write-essay-selected-thoughts-list"></div>
+
+            <!-- 더 담고 싶은 생각 (자유 추가 입력) -->
+            <div id="write-essay-extra-thought-box" class="form-group thought-editor-item" style="margin-top: 20px;">
+              <label class="form-label" for="write-essay-extra-input">
+                ADDITIONAL THOUGHTS / 더 담고 싶은 생각 <span class="optional">(선택)</span>
+              </label>
+              <textarea id="write-essay-extra-input" class="form-textarea-editorial"
+                placeholder="책을 읽으며 떠오른 다른 느낌이나 추가하고 싶은 문장이 있다면 자유롭게 남겨보세요."></textarea>
+            </div>
+
+            <!-- 저장된 답변이 없거나 직접 새로 쓸 때 나타나는 단독 textarea -->
+            <div id="write-essay-free-thought-box" class="form-group thought-editor-item" style="display: none;">
+              <label class="form-label" for="write-essay-free-input">
+                MY THOUGHTS / 나의 생각
+              </label>
+              <textarea id="write-essay-free-input" class="form-textarea-editorial" style="min-height: 160px;"
+                placeholder="이 책을 읽고 느낀 점, 인상 깊었던 장면, 나의 생각을 자유롭게 작성해 주세요."></textarea>
+            </div>
+          </div>
+
+          <!-- 원본 불변 안내 문구 -->
+          <div class="essay-privacy-notice">
+            <span class="notice-icon">ⓘ</span>
+            <span>이곳에서 수정해도 북클럽에 남긴 공개 답변은 바뀌지 않아요.</span>
+          </div>
+
+          <!-- AI 생성 버튼 -->
+          <div class="essay-generate-action-bar">
+            <button type="button" id="write-essay-generate-btn" class="btn btn-primary btn-block essay-generate-btn">
+              AI로 독후감 초안 만들기 ↗
+            </button>
+          </div>
+
+          <!-- AI 생성 로딩 상태 -->
+          <div id="write-essay-generating-loading" class="essay-generating-card" style="display: none;">
+            <div class="spinner-line"></div>
+            <p class="generating-title">입력하신 생각을 바탕으로 독후감을 구성하고 있습니다…</p>
+            <p class="generating-sub">문장을 다듬고 중심 생각을 연결하는 중입니다. 잠시만 기다려 주세요.</p>
+          </div>
+
+          <!-- AI 생성 실패 시 에러 알림 -->
+          <div id="write-essay-generate-error" class="essay-error-card" style="display: none;">
+            <p id="write-essay-error-msg">독후감 생성에 실패했습니다.</p>
+            <button type="button" id="write-essay-retry-btn" class="btn btn-secondary" style="margin-top: 8px;">
+              다시 시도 →
+            </button>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 독후감 결과 영역 (초기 hidden)                             -->
+        <!-- ========================================================= -->
+        <div id="write-essay-result-area" class="essay-flow-step" style="display: none;">
+          <div class="essay-result-card">
+            <div class="result-card-header">
+              <span class="result-tag">COMPLETED ESSAY</span>
+              <h2 id="write-essay-result-book-title" class="result-title">나의 독후감</h2>
+              <p class="result-sub">생각을 엮어 만든 초안입니다. 자유롭게 수정하여 완성하세요.</p>
+            </div>
+
+            <!-- 생각이 변경되었을 때 안내 배너 -->
+            <div id="write-essay-thought-modified-banner" class="thought-modified-banner" style="display: none;">
+              <span>ⓘ 작성 중인 생각이 변경되었어요. 다시 생성하면 변경된 내용이 반영됩니다.</span>
+            </div>
+
+            <!-- 결과 편집 에디터 -->
+            <div class="form-group" style="margin-top: 16px;">
+              <textarea id="write-essay-result-editor" class="form-textarea-editorial essay-result-textarea"
+                rows="14" aria-label="완성된 독후감 본문"></textarea>
+            </div>
+
+            <!-- 액션 버튼 그룹 -->
+            <div class="result-action-buttons">
+              <button type="button" id="write-essay-copy-btn" class="btn btn-burgundy btn-block">
+                독후감 본문 복사하기 📋
+              </button>
+              <div class="result-secondary-actions">
+                <button type="button" id="write-essay-regenerate-btn" class="btn btn-secondary" style="flex: 1;">
+                  다시 생성하기 ↻
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.write-essay-container -->
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- Footer — Minimal                                              -->
+    <!-- ============================================================= -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-brand">BOOKMATE</span>
+        <span class="footer-desc"> 같이 봐서 더 즐거운 북클럽 </span>
+      </div>
+      <div class="footer-right">
+        <a href="javascript:void(0)" class="footer-link" data-info-tab="about">ABOUT</a>
+        <span class="footer-divider">|</span>
+        <a href="javascript:void(0)" class="footer-link" data-info-tab="privacy">PRIVACY</a>
+        <span class="footer-divider">|</span>
+        <a href="javascript:void(0)" class="footer-link" data-info-tab="help">HELP</a>
+      </div>
+    </footer>
+
+  </div><!-- /.app-container -->
+
+  <!-- ============================================================= -->
+  <!-- Info Modal (ABOUT / PRIVACY / HELP 안내 모달)                 -->
+  <!-- ============================================================= -->
+  <div id="info-modal" class="auth-modal-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="auth-modal-card info-modal-card">
+      <button type="button" class="auth-modal-close-btn" id="info-modal-close-btn" aria-label="닫기">✕</button>
+
+      <!-- 모달 상단 탭 -->
+      <div class="info-modal-tabs">
+        <button type="button" class="info-tab-btn active" data-tab="about">ABOUT</button>
+        <span class="info-tab-divider">|</span>
+        <button type="button" class="info-tab-btn" data-tab="privacy">PRIVACY</button>
+        <span class="info-tab-divider">|</span>
+        <button type="button" class="info-tab-btn" data-tab="help">HELP</button>
+      </div>
+
+      <!-- Tab 1: ABOUT (서비스 소개) -->
+      <div id="info-content-about" class="info-content-panel">
+        <h3 class="info-panel-title">같은 책. 다른 생각.</h3>
+        <p class="info-panel-lead">BOOKMATE는 책 속에서 발견한 질문에 답하고, 같은 책을 읽은 다른 독자의 시선을 마주하며 나만의 단단한 생각을 완성하는 공간입니다.</p>
+        <ul class="info-panel-list">
+          <li><strong>책 1권 = 공개 북클럽 1개</strong>: 하나의 책(판본/ISBN)에는 하나의 공개 북클럽만 존재하며, 누구나 질문과 다른 독자의 생각을 읽을 수 있습니다.</li>
+          <li><strong>생각을 확장하는 AI</strong>: AI는 답을 정해주지 않고, 내가 작성한 답변을 깊이 이해하여 사유를 넓히는 맞춤형 후속 질문을 건넵니다.</li>
+          <li><strong>나만의 단단한 에세이</strong>: AI와 대화하며 남긴 나만의 생각들을 엮어 오직 나의 시선이 담긴 완성도 높은 독후감을 만듭니다.</li>
+        </ul>
+      </div>
+
+      <!-- Tab 2: PRIVACY (공개와 개인 영역의 원칙) -->
+      <div id="info-content-privacy" class="info-content-panel" style="display: none;">
+        <h3 class="info-panel-title">공개와 개인의 균형 원칙</h3>
+        <p class="info-panel-lead">BOOKMATE는 함께 나누는 대화의 즐거움과, 나만의 깊은 개인 사유를 명확히 구분하여 보호합니다.</p>
+        <ul class="info-panel-list">
+          <li><strong>첫 생각은 함께 나눕니다</strong>: 북클럽 질문에 남기는 첫 번째 답변은 모든 독자가 함께 읽고 공감할 수 있도록 공개 저장됩니다. (언제든 수정 가능)</li>
+          <li><strong>AI와의 대화는 나만의 공간입니다</strong>: 첫 답변 이후 AI와 1:1로 이어지는 깊은 생각 확장(후속 질문과 답변)은 다른 독자에게 일절 공개되지 않는 개인 독서
+            노트입니다.</li>
+          <li><strong>독후감은 100% 나의 생각만으로</strong>: 다른 사람의 의견은 절대 섞이지 않으며, 오직 '내가 직접 기록한 생각'만을 엮어 나만의 독후감으로 완성됩니다.</li>
+        </ul>
+      </div>
+
+      <!-- Tab 3: HELP (이용 가이드) -->
+      <div id="info-content-help" class="info-content-panel" style="display: none;">
+        <h3 class="info-panel-title">BOOKMATE 이용 가이드</h3>
+        <div class="info-help-steps">
+          <div class="info-step-item">
+            <span class="info-step-num">01</span>
+            <div>
+              <strong>북클럽 둘러보기 & 책 찾기</strong>
+              <p>열려 있는 북클럽 목록을 확인하거나, 로그인 후 읽은 책을 검색해 기존 북클럽에 입장하거나 새 북클럽을 여세요.</p>
+            </div>
+          </div>
+          <div class="info-step-item">
+            <span class="info-step-num">02</span>
+            <div>
+              <strong>질문에 첫 생각 남기기</strong>
+              <p>공유된 토론 질문에 다른 독자의 시선을 살펴보고, 로그인 후 나의 솔직한 첫 답변을 공개로 남겨보세요.</p>
+            </div>
+          </div>
+          <div class="info-step-item">
+            <span class="info-step-num">03</span>
+            <div>
+              <strong>AI 후속 질문으로 생각 확장</strong>
+              <p>내 답변을 분석해 AI가 1:1로 건네는 심화 후속 질문에 답하며, 나만의 비공개 영역에서 생각을 더 깊이 발전시키세요.</p>
+            </div>
+          </div>
+          <div class="info-step-item">
+            <span class="info-step-num">04</span>
+            <div>
+              <strong>나만의 에세이 완성하기</strong>
+              <p>기록한 생각들을 모아 비평적·감성적 등 원하는 문체를 선택하고 완성도 높은 독후감을 생성하세요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- Auth Modal (Login / Sign-up)                                  -->
+  <!-- ============================================================= -->
+  <div id="auth-modal" class="auth-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title"
+    style="display: none;">
+    <div class="auth-modal-card">
+      <button type="button" class="auth-modal-close-btn" id="auth-modal-close-btn" aria-label="닫기">
+        ✕
+      </button>
+
+      <!-- View 1: Login -->
+      <div id="auth-view-login" class="auth-modal-view">
+        <h2 id="auth-modal-title" class="auth-modal-title">LOGIN</h2>
+
+        <div id="login-error-msg" class="auth-error-msg" style="display: none;"></div>
+
+        <form id="auth-login-form" class="auth-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-email-input">EMAIL</label>
+            <input type="email" id="login-email-input" class="form-input-editorial" required autocomplete="email"
+              placeholder="example@bookmate.kr">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password-input">PASSWORD</label>
+            <input type="password" id="login-password-input" class="form-input-editorial" required
+              autocomplete="current-password" placeholder="비밀번호 입력">
+          </div>
+          <button type="submit" id="login-submit-btn" class="btn btn-burgundy btn-block"
+            style="margin-top: var(--space-md);">
+            LOGIN →
+          </button>
+        </form>
+
+        <hr class="editorial-divider" style="margin: var(--space-lg) 0;">
+
+        <div class="auth-switch-prompt">
+          <span>처음인가요?</span>
+          <button type="button" id="switch-to-signup-btn" class="auth-switch-link">
+            CREATE ACCOUNT →
+          </button>
+        </div>
+      </div>
+
+      <!-- View 2: Sign-up -->
+      <div id="auth-view-signup" class="auth-modal-view" style="display: none;">
+        <h2 id="signup-modal-title" class="auth-modal-title">CREATE ACCOUNT</h2>
+
+        <div id="signup-error-msg" class="auth-error-msg" style="display: none;"></div>
+
+        <form id="auth-signup-form" class="auth-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="signup-name-input">DISPLAY NAME</label>
+            <input type="text" id="signup-name-input" class="form-input-editorial" required autocomplete="name"
+              placeholder="독자 이름 또는 닉네임">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-email-input">EMAIL</label>
+            <input type="email" id="signup-email-input" class="form-input-editorial" required autocomplete="email"
+              placeholder="example@bookmate.kr">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-password-input">PASSWORD</label>
+            <input type="password" id="signup-password-input" class="form-input-editorial" required
+              autocomplete="new-password" placeholder="8자 이상 입력">
+          </div>
+          <button type="submit" id="signup-submit-btn" class="btn btn-burgundy btn-block"
+            style="margin-top: var(--space-md);">
+            CREATE ACCOUNT →
+          </button>
+        </form>
+
+        <hr class="editorial-divider" style="margin: var(--space-lg) 0;">
+
+        <div class="auth-switch-prompt">
+          <span>이미 계정이 있나요?</span>
+          <button type="button" id="switch-to-login-btn" class="auth-switch-link">
+            LOGIN →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client JavaScript Modules -->
+  <script src="/static/js/state.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/components.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

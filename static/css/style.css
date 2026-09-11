@@ -1,0 +1,3947 @@
+/* ==========================================================================
+   BOOKMATE Stylesheet
+   Visual Concept: Contemporary Editorial Book Club
+   Design Reference: Ollama Minimalism × Literary Magazine × Book Club
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Noto+Serif+KR:wght@300;400;500;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* === Color Palette =====================================================
+     Pure White (#FFFFFF) Base + Green, Mint, Light Blue & Orange Accent.
+     Warm/cream/yellow tints are strictly forbidden.
+  ========================================================================= */
+  --bg-canvas: #ffffff;
+  --surface-pure: #ffffff;
+  --surface-subtle: #f8fbf9;
+  --surface-quote: #f4f8f5;
+
+  --text-primary: #171717;
+  --text-secondary: #666666;
+  --text-muted: #888888;
+
+  --border-hairline: #eef2ef;
+  --border-medium: #d4ded7;
+  --border-dark: #222222;
+
+  /* BOOK TOWN Core Palette */
+  --color-light-green: #DDEFD8;
+  --color-green: #5B9D48;
+  --color-mint: #BFE6D2;
+  --color-very-light-blue: #EDF8FB;
+  --color-orange: #FF8A3D;
+  --color-line: #222222;
+
+  /* Single accent — Deep Literary Burgundy (독후감 및 보조 버튼용) */
+  --accent-burgundy: #842029;
+  --accent-burgundy-hover: #6b161d;
+  --accent-burgundy-tint: #f9eaea;
+
+  /* === Typography =========================================================
+     Newsreader  — editorial serif for headings & literary content
+     Noto Serif KR — Korean serif for body text
+     Pretendard  — clean sans for UI labels, buttons, metadata
+  ========================================================================= */
+  --font-serif: "Newsreader", "Noto Serif KR", Georgia, serif;
+  --font-kr-serif: "Noto Serif KR", "Newsreader", Georgia, serif;
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --line-height-base: 1.75;
+  --line-height-heading: 1.2;
+
+  /* === Spacing ============================================================ */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 36px;
+  --space-2xl: 56px;
+  --space-3xl: 80px;
+  --space-section: 96px;
+
+  /* === Layout ============================================================= */
+  --max-width: 1120px;
+  --max-width-reading: 680px;
+}
+
+/* ==========================================================================
+   Reset & Base
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  animation: bodyFadeIn 0.35s ease forwards;
+}
+
+@keyframes bodyFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  body,
+  .view-section {
+    animation: none;
+  }
+}
+
+::selection {
+  background-color: var(--accent-burgundy-tint);
+  color: var(--accent-burgundy);
+}
+
+/* ==========================================================================
+   Layout Container (메인 및 북클럽 전체 페이지 레이아웃 통일)
+   ========================================================================== */
+.app-container {
+  width: 100%;
+  max-width: min(1880px, 96vw);
+  margin: 0 auto;
+  padding: var(--space-lg) clamp(24px, 2vw, 32px) var(--space-3xl);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.app-container>.view-section {
+  flex: 1;
+}
+
+.app-container>.app-footer {
+  margin-top: auto;
+}
+
+/* 북클럽 및 서브 페이지 본문 영역 (헤더는 양 끝 유지, 본문은 중앙 가독성 유지) */
+.view-section:not(#view-main) {
+  max-width: var(--max-width);
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   Header — Minimal Masthead (헤더 위치/패딩 통일)
+   ========================================================================== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: var(--space-md);
+  margin-bottom: clamp(36px, 4vh, 56px);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+
+.brand-logo {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  text-decoration: none;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.brand-logo:hover {
+  opacity: 0.55;
+}
+
+.brand-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-left: var(--space-sm);
+  border-left: 1px solid var(--border-hairline);
+  padding-left: var(--space-sm);
+}
+
+.header-action-btn {
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  padding: 6px 16px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.header-action-btn:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-canvas);
+}
+
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.header-auth-area {
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s ease;
+}
+
+.header-auth-area.is-loading {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header-user-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.header-user-name {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  padding: 0 4px;
+}
+
+.header-auth-btn {
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  padding: 6px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.header-auth-btn:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-canvas);
+}
+
+/* ==========================================================================
+   View Sections — Animated Transitions
+   ========================================================================== */
+.view-section {
+  display: none;
+  animation: editorialFadeIn 0.22s ease forwards;
+}
+
+.view-section.active {
+  display: block;
+}
+
+@keyframes editorialFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   HERO SECTION — Asymmetric 2-Column Grid
+   Left: Brand Message  |  Right: Book Search Form
+   ========================================================================== */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  align-items: start;
+  min-height: calc(100vh - 160px);
+}
+
+.hero-left {
+  padding: var(--space-3xl) var(--space-3xl) var(--space-3xl) 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-right {
+  border-left: 1px solid var(--border-hairline);
+  padding: var(--space-3xl) 0 var(--space-3xl) var(--space-3xl);
+}
+
+/* Hero Tagline — small uppercase label above headline */
+.hero-tagline {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-xl);
+  display: block;
+}
+
+/* Hero Title — primary visual element, Typography IS the design */
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.8rem, 4.5vw, 4.4rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xl);
+}
+
+.hero-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  max-width: 400px;
+}
+
+/* Form section eyebrow inside hero-right */
+.hero-form-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* ==========================================================================
+   Dividers
+   ========================================================================== */
+.editorial-divider {
+  border: 0;
+  height: 1px;
+  background-color: var(--border-hairline);
+  margin: var(--space-xl) 0;
+}
+
+.editorial-divider-dark {
+  border: 0;
+  height: 1px;
+  background-color: var(--border-dark);
+  margin: var(--space-xl) 0;
+}
+
+/* ==========================================================================
+   Section Labels — Thin uppercase, no emoji
+   ========================================================================== */
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: var(--space-sm);
+}
+
+.section-label-count {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Forms & Inputs — Unified Underline Style
+   Both text inputs and textareas use the same bottom-border treatment.
+   No box, no background, no border-radius. Ink on paper.
+   ========================================================================== */
+.editorial-form {
+  margin-top: 0;
+}
+
+.form-group {
+  margin-bottom: var(--space-2xl);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.form-label .optional {
+  font-weight: 400;
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* Input — underline style */
+.form-input-editorial {
+  width: 100%;
+  padding: 10px 0;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.18s ease, border-bottom-width 0.18s ease;
+  border-radius: 0;
+}
+
+.form-input-editorial:focus {
+  border-bottom-color: var(--text-primary);
+  border-bottom-width: 2px;
+}
+
+.form-input-editorial::placeholder {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Textarea — SAME underline style as input, no box */
+.form-textarea-editorial {
+  width: 100%;
+  padding: 10px 0;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  outline: none;
+  min-height: 80px;
+  resize: none;
+  transition: border-color 0.18s ease, border-bottom-width 0.18s ease;
+  border-radius: 0;
+  display: block;
+}
+
+.form-textarea-editorial:focus {
+  border-bottom-color: var(--text-primary);
+  border-bottom-width: 2px;
+}
+
+.form-textarea-editorial::placeholder {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.form-submit {
+  margin-top: var(--space-xl);
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.55;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: var(--accent-burgundy);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Buttons — Sharp Corners, High Contrast
+   No border-radius. Bold, typographic, editorial.
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 13px 24px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-dark);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  text-decoration: none;
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 0;
+}
+
+.btn-primary {
+  background-color: var(--text-primary);
+  color: var(--bg-canvas);
+  border-color: var(--text-primary);
+}
+
+.btn-primary:hover {
+  background-color: #2a2a29;
+}
+
+.btn-burgundy {
+  background-color: var(--accent-burgundy);
+  color: #ffffff;
+  border-color: var(--accent-burgundy);
+}
+
+.btn-burgundy:hover {
+  background-color: var(--accent-burgundy-hover);
+  border-color: var(--accent-burgundy-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-dark);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Book Masthead Banner — Magazine Cover Style
+   ========================================================================== */
+.book-masthead {
+  padding-bottom: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--border-dark);
+}
+
+.masthead-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.masthead-accent {
+  color: var(--accent-burgundy);
+}
+
+.masthead-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.masthead-author {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Question Row Index — Magazine Index Style
+   The Reading Column: numbered rows, thin hairlines, editorial spacing.
+   ========================================================================== */
+.question-row-item {
+  display: block;
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid var(--border-hairline);
+  transition: border-bottom-color 0.15s ease;
+  position: relative;
+}
+
+.question-row-item:hover {
+  border-bottom-color: var(--border-dark);
+}
+
+.question-row-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xs);
+}
+
+/* Question number — tabular, muted, minimal */
+.question-index-num {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  min-width: 20px;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* Question text — structured editorial style */
+.question-row-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.question-topic-title {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.question-quote-summary {
+  margin: 2px 0;
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--surface-subtle);
+  border-left: 3px solid var(--accent-burgundy);
+  border-radius: 0 4px 4px 0;
+  font-family: var(--font-kr-serif);
+  font-size: 0.9rem;
+  font-style: normal;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.question-sub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.question-sub-item {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.question-fallback-text {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.question-row-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: calc(20px + var(--space-xl));
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: var(--space-xs);
+}
+
+.question-meta-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.badge-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.badge-ai {
+  color: var(--accent-burgundy);
+}
+
+.question-actions-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* Like button */
+.like-btn-editorial {
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  padding: 3px 10px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 0;
+}
+
+.like-btn-editorial:hover {
+  border-color: var(--border-dark);
+  color: var(--text-primary);
+}
+
+.like-btn-editorial.liked {
+  background-color: var(--accent-burgundy-tint);
+  border-color: var(--accent-burgundy);
+  color: var(--accent-burgundy);
+  font-weight: 600;
+}
+
+/* Discuss link — arrow-only hover effect */
+.discuss-link-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  transition: color 0.15s ease;
+}
+
+.discuss-link-btn:hover {
+  color: var(--accent-burgundy);
+}
+
+/* Arrow moves independently — text stays fixed */
+.discuss-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.discuss-link-btn:hover .discuss-arrow {
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   Discussion View — Topic Hero & Quotes
+   ========================================================================== */
+.selected-question-hero {
+  padding: var(--space-lg) 0 var(--space-xl);
+  border-bottom: 1px solid var(--border-dark);
+  margin-bottom: var(--space-2xl);
+}
+
+.selected-question-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--accent-burgundy);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.selected-question-title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.38;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.selected-question-title .question-topic-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.selected-question-title .question-quote-summary {
+  margin: var(--space-xs) 0;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.selected-question-title .question-sub-item {
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+/* Reader Quotes — editorial interview style */
+.quote-item {
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.quote-author-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.quote-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.98rem;
+  line-height: 1.85;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--border-hairline);
+}
+
+/* ==========================================================================
+   AI Follow-Up — The Host's Inquiry
+   Burgundy left border = the one "look here" moment per fold.
+   ========================================================================== */
+.host-prompt-box {
+  border-left: 2px solid var(--accent-burgundy);
+  background-color: var(--surface-quote);
+  padding: var(--space-lg) var(--space-xl);
+  margin: var(--space-xl) 0;
+}
+
+.host-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--accent-burgundy);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.host-question-text {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Review Style Selector — Clean Card Grid
+   ========================================================================== */
+.style-editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin: var(--space-xl) 0;
+  border: 1px solid var(--border-hairline);
+}
+
+.style-editorial-card {
+  border: none;
+  background-color: transparent;
+  padding: var(--space-lg);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.style-editorial-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--border-hairline);
+}
+
+.style-editorial-card:nth-child(odd) {
+  border-right: 1px solid var(--border-hairline);
+}
+
+.style-editorial-card:hover {
+  background-color: var(--surface-subtle);
+}
+
+.style-editorial-card.selected {
+  background-color: var(--surface-subtle);
+  outline: 2px solid var(--accent-burgundy);
+  outline-offset: -2px;
+}
+
+.style-editorial-card .name {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.style-editorial-card .desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Review Result — Monograph / Essay View
+   ========================================================================== */
+.essay-container {
+  max-width: var(--max-width-reading);
+  margin: 0 auto;
+}
+
+.essay-header {
+  text-align: center;
+  padding-bottom: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+  border-bottom: 1px solid var(--border-dark);
+}
+
+.essay-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--accent-burgundy);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.essay-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: var(--space-xs);
+}
+
+.essay-byline {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.essay-body {
+  font-family: var(--font-kr-serif);
+  font-size: 1.05rem;
+  line-height: 2;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  padding: var(--space-md) 0 var(--space-2xl);
+}
+
+/* ==========================================================================
+   States — Loading, Empty, Error, Toast
+   ========================================================================== */
+.state-container {
+  padding: var(--space-2xl) 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.spinner-line {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border-hairline);
+  border-top-color: var(--accent-burgundy);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto var(--space-md);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.empty-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.error-banner {
+  border-left: 2px solid var(--accent-burgundy);
+  background-color: var(--accent-burgundy-tint);
+  color: var(--accent-burgundy);
+  padding: var(--space-md);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text-primary);
+  color: var(--bg-canvas);
+  padding: 10px 24px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+/* ==========================================================================
+   Responsive — Tablet & Mobile
+   ========================================================================== */
+
+/* Tablet: collapse hero to single column */
+@media (max-width: 920px) {
+  .app-container {
+    padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .hero-left {
+    padding: var(--space-2xl) 0 var(--space-xl) 0;
+  }
+
+  .hero-right {
+    border-left: none;
+    border-top: 1px solid var(--border-hairline);
+    padding: var(--space-xl) 0 0 0;
+  }
+
+  .hero-title {
+    font-size: 2.6rem;
+  }
+}
+
+/* Mobile (767px 이하) */
+@media (max-width: 767px) {
+  .app-container {
+    padding: var(--space-md) var(--space-md) var(--space-2xl);
+  }
+
+  .hero-title {
+    font-size: 2.1rem;
+  }
+
+  .masthead-title {
+    font-size: 1.7rem;
+  }
+
+  .selected-question-title {
+    font-size: 1.4rem;
+  }
+
+  .style-editorial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .style-editorial-card:nth-child(odd) {
+    border-right: none;
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  .question-row-footer {
+    padding-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
+  .question-actions-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .host-prompt-box {
+    padding: var(--space-md);
+  }
+}
+
+/* ==========================================================================
+   Book Search — Step-by-Step UX Components
+   ========================================================================== */
+
+/* 인라인 도서 검색 입력 래퍼 */
+.search-input-inline-wrap {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-medium);
+  transition: border-color 0.18s ease, border-bottom-width 0.18s ease;
+}
+
+.search-input-inline-wrap:focus-within {
+  border-bottom-color: var(--text-primary);
+  border-bottom-width: 2px;
+}
+
+.search-input-inline-wrap .search-input-field {
+  border-bottom: none !important;
+  padding: 10px 0;
+  flex: 1;
+}
+
+.search-inline-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 10px 0 10px 12px;
+  white-space: nowrap;
+  transition: color 0.18s ease, opacity 0.18s ease;
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.search-inline-btn:hover {
+  color: var(--accent-burgundy);
+}
+
+.search-inline-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 도서 검색 결과 0건 Empty State */
+.empty-search-container {
+  padding: var(--space-lg) 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.empty-search-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.empty-search-prompt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* 직접 추가하기 text link */
+.direct-add-link-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.18s ease;
+}
+
+.direct-add-link-btn:hover {
+  color: var(--accent-burgundy);
+}
+
+/* 도서 검색 결과 카드 */
+.book-search-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-hairline);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border-radius: 2px;
+}
+
+.book-search-card:hover {
+  background-color: var(--surface-subtle);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  margin-right: calc(-1 * var(--space-sm));
+}
+
+.book-search-card.selected {
+  background-color: var(--surface-subtle);
+  border-left: 2px solid var(--accent-burgundy);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  margin-right: calc(-1 * var(--space-sm));
+}
+
+.book-search-card:focus-visible {
+  outline: 2px solid var(--accent-burgundy);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 표지 이미지 영역 */
+.book-search-card-cover {
+  flex-shrink: 0;
+  width: 48px;
+  height: 68px;
+  overflow: hidden;
+  border: 1px solid var(--border-hairline);
+  border-radius: 1px;
+  background-color: var(--surface-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-cover-placeholder {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* 도서 텍스트 정보 영역 */
+.book-search-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.book-search-card-title {
+  font-family: var(--font-kr-serif);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  /* 두 줄까지만 표시 */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.book-search-card-author {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.book-search-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: 4px;
+}
+
+.book-search-card-meta span {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border: 1px solid var(--border-hairline);
+  padding: 1px 6px;
+  border-radius: 1px;
+}
+
+.book-search-card-meta span.selected-tag {
+  display: none;
+  font-weight: 600;
+  color: var(--accent-burgundy);
+  border-color: var(--accent-burgundy);
+  background-color: var(--accent-burgundy-tint);
+}
+
+.book-search-card.selected .book-search-card-meta span.selected-tag {
+  display: inline-block;
+}
+
+/* ==========================================================================
+   북클럽 뷰 — 책 표지 배너 추가 지원
+   ========================================================================== */
+.book-masthead-with-cover {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-xl);
+  border-bottom: 2px solid var(--border-dark);
+  margin-bottom: var(--space-xl);
+}
+
+.book-masthead-cover-wrap {
+  flex-shrink: 0;
+  width: 72px;
+  height: 100px;
+  border: 1px solid var(--border-medium);
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.book-masthead-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 480px) {
+  .book-search-card-cover {
+    width: 40px;
+    height: 56px;
+  }
+}
+
+/* ==========================================================================
+   질문 Loading / Error 상태
+   ========================================================================== */
+
+.questions-error-state {
+  padding: var(--space-xl) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.questions-error-msg {
+  font-family: var(--font-kr-serif);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.questions-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.questions-retry-btn:hover {
+  background: var(--text-primary);
+  color: var(--surface-pure);
+}
+
+/* ==========================================================================
+   Accordion Discussion Panel — Inline Expand (Editorial Style)
+   ========================================================================== */
+
+/* DISCUSS 버튼 — Accordion 토글 상태 */
+.discuss-link-btn[aria-expanded="true"] .discuss-arrow {
+  transform: rotate(180deg);
+}
+
+.discuss-link-btn[aria-expanded="true"] {
+  color: var(--text-muted);
+}
+
+/* Accordion 패널 래퍼 — height 애니메이션을 위해 overflow hidden */
+.discussion-accordion-panel {
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  /* transition은 JS에서 active 상태일 때 적용 */
+  transition: height 0.28s ease, opacity 0.22s ease;
+  will-change: height, opacity;
+}
+
+.discussion-accordion-panel.is-open {
+  opacity: 1;
+  /* height는 JS에서 scrollHeight 값으로 설정 */
+}
+
+/* 모션 감소 설정 */
+@media (prefers-reduced-motion: reduce) {
+  .discussion-accordion-panel {
+    transition: none;
+  }
+}
+
+/* 패널 내부 콘텐츠 */
+.accordion-panel-inner {
+  padding: var(--space-lg) 0 var(--space-xl);
+  border-top: 1px solid var(--border-dark);
+}
+
+/* 섹션 구분선 */
+.accordion-section-divider {
+  border: 0;
+  height: 1px;
+  background-color: var(--border-hairline);
+  margin: var(--space-xl) 0;
+}
+
+/* YOUR THOUGHT 섹션 레이블 */
+.accordion-section-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* 폼 내 그룹 간격 (Accordion 전용 - 기존 .form-group 과 충돌 방지) */
+.accordion-form-group {
+  margin-bottom: var(--space-lg);
+}
+
+/* AI Follow-up 영역 — 제출 후 표시 */
+.accordion-followup-area {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-hairline);
+}
+
+/* 내 답변 미리보기 (제출 후) */
+.accordion-answer-preview {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-xs);
+}
+
+.accordion-answer-preview-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: var(--space-lg);
+}
+
+/* Follow-up 완료 메시지 */
+.accordion-success-msg {
+  text-align: center;
+  padding: var(--space-2xl) 0 var(--space-lg);
+}
+
+.accordion-success-title {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.accordion-success-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.accordion-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+/* DISCUSS 버튼 touch target 확보 (모바일: 767px 이하) */
+@media (max-width: 767px) {
+  .discuss-link-btn {
+    min-height: 44px;
+    padding: 10px 0;
+  }
+}
+
+/* ==========================================================================
+   Auth Modal (Login / Sign-up)
+   Style: Contemporary Editorial (Minimal, sharp borders, typography-focused)
+   ========================================================================== */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 20, 19, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  z-index: 1000;
+  animation: authOverlayFadeIn 0.2s ease forwards;
+}
+
+@keyframes authOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--surface-pure);
+  border: 1px solid var(--border-dark);
+  padding: var(--space-xl);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: authModalSlideIn 0.22s ease forwards;
+}
+
+@keyframes authModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-modal-close-btn {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.auth-modal-close-btn:hover {
+  color: var(--text-primary);
+}
+
+.auth-modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.auth-error-msg {
+  background-color: var(--accent-burgundy-tint);
+  border: 1px solid var(--accent-burgundy);
+  color: var(--accent-burgundy);
+  font-size: 0.8rem;
+  padding: 10px 12px;
+  margin-bottom: var(--space-md);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.auth-switch-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.auth-switch-link {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-burgundy);
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s ease;
+}
+
+.auth-switch-link:hover {
+  color: var(--accent-burgundy-hover);
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .auth-modal-overlay,
+  .auth-modal-card {
+    animation: none;
+    transition: none;
+  }
+}
+
+
+
+
+/* ==========================================================================
+/* ==========================================================================
+   Phase 5 — BOOKMATE BOOK TOWN (Editorial 2-Column Edition — Scaled)
+   ========================================================================== */
+
+/* --- BOOK TOWN Stage Layout (기본 2-Column Flex Fallback) ----------------- */
+.town-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(24px, 3vw, 40px);
+  min-height: auto;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+/* --- Hero Typography (Left: 약 400~420px) -------------------------------- */
+.town-hero {
+  flex: 0 0 clamp(320px, 30%, 420px);
+  max-width: 420px;
+  position: relative;
+  z-index: 5;
+}
+
+
+.hero-tagline {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-green);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.town-hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 4.2vw, 4.6rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.town-hero-desc {
+  font-family: var(--font-kr-serif);
+  font-size: clamp(0.92rem, 1.05vw, 1.05rem);
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  max-width: 380px;
+  word-break: keep-all;
+}
+
+.town-hero-tagline {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* --- Illustration & Interactive World (Right: 메인 비주얼 블록 720~900px) --- */
+.bookmate-world {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.world-illustration-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: transparent;
+}
+
+.world-illustration {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* --- Desktop (1200px 이상): Relative Stage + Independent Visual Positioning --- */
+@media (min-width: 1200px) {
+  .town-stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 0;
+  }
+
+  .town-hero {
+    grid-area: 1 / 1;
+    position: relative;
+    z-index: 5;
+    width: clamp(380px, 23vw, 420px);
+    max-width: 420px;
+    justify-self: start;
+    flex: none;
+  }
+
+  .bookmate-world {
+    grid-area: 1 / 1;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1460px;
+    justify-self: end;
+    flex: none;
+  }
+}
+
+/* --- Interactive Overlay Layer ------------------------------------------ */
+.world-actions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.world-spot {
+  position: absolute;
+  pointer-events: auto;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 10;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Desktop 핀 좌표 */
+.spot-clubs {
+  top: 14%;
+  left: 51%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spot-clubs:hover {
+  transform: translateX(-50%) translateY(-3px);
+}
+
+.spot-search {
+  top: 48%;
+  left: 5%;
+}
+
+.spot-search:hover {
+  transform: translateY(-3px);
+}
+
+.spot-essay {
+  top: 61%;
+  right: 18%;
+}
+
+.spot-essay:hover {
+  transform: translateY(-3px);
+}
+
+/* --- Orange Circle Badge ------------------------------------------------ */
+.marker-circle {
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  width: clamp(22px, 1.8vw, 26px);
+  height: clamp(22px, 1.8vw, 26px);
+  border-radius: 50%;
+  background-color: var(--color-orange);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(255, 138, 61, 0.4);
+  z-index: 12;
+  transition: transform 0.18s ease;
+}
+
+.world-spot:hover .marker-circle {
+  transform: scale(1.1);
+}
+
+/* --- Speech Bubble Card (간결하고 정돈된 화이트 카드) --------------------- */
+.marker-card {
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  padding: 6px clamp(8px, 1vw, 14px) 6px clamp(12px, 1.2vw, 16px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  width: clamp(130px, 14vw, 185px);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.world-spot:hover .marker-card {
+  border-color: var(--color-orange);
+  box-shadow: 0 6px 20px rgba(255, 138, 61, 0.18);
+}
+
+.marker-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.marker-card-title {
+  font-family: var(--font-sans);
+  font-size: clamp(0.72rem, 0.78vw, 0.82rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.marker-card-arrow {
+  font-size: clamp(0.7rem, 0.76vw, 0.8rem);
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.world-spot:hover .marker-card-arrow {
+  transform: translateX(3px);
+  color: var(--color-orange);
+}
+
+/* 01번 열린 북클럽은 아래 방향(↓)이므로 호버 시 아래로 살짝 이동 */
+.spot-clubs:hover .marker-card-arrow {
+  transform: translateY(3px);
+}
+
+.marker-card-sub {
+  font-family: var(--font-sans);
+  font-size: clamp(0.56rem, 0.62vw, 0.64rem);
+  line-height: 1.35;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 설명문 내부 중복 인라인 화살표 숨김 (세 카드 모두 제목 우측 단일 화살표로 통일) */
+.marker-card-arrow-inline {
+  display: none;
+}
+
+.world-spot:focus-visible {
+  outline: 2px solid var(--color-orange);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   OPEN BOOK CLUBS Strip (Hero 바로 아래 얇고 작은 Horizontal Book Strip)
+   Desktop에서는 숨기고 Hero 한 화면 구성에 집중
+   ========================================================================== */
+.open-clubs-strip {
+  display: block;
+  margin-top: clamp(24px, 3vh, 40px);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.strip-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.strip-title {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--color-green);
+  text-transform: uppercase;
+}
+
+.strip-subtitle {
+  font-family: var(--font-kr-serif);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.book-clubs-grid {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(14px, 1.8vw, 24px);
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-x: auto;
+  padding-bottom: var(--space-xs);
+}
+
+/* 아담한 표지 카드 (폭 70~88px) */
+.book-club-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: clamp(70px, 6.5vw, 88px);
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline-offset: 3px;
+}
+
+.book-club-card:hover {
+  transform: translateY(-4px);
+}
+
+.book-club-card:focus-visible {
+  outline: 2px solid var(--color-green);
+  border-radius: 3px;
+}
+
+.bcc-cover-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 2px 4px 4px 2px;
+  background: var(--surface-subtle);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1), -2px 0 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.book-club-card:hover .bcc-cover-wrap {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16), -2px 0 6px rgba(0, 0, 0, 0.06);
+}
+
+.bcc-num-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: rgba(23, 23, 23, 0.75);
+  backdrop-filter: blur(2px);
+  color: #ffffff;
+  font-size: 0.5rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  z-index: 2;
+}
+
+.bcc-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bcc-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-very-light-blue);
+  border: 1px solid var(--color-mint);
+}
+
+.bcc-cover-placeholder span {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--color-green);
+  line-height: 1;
+  user-select: none;
+}
+
+.bcc-info {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bcc-title {
+  font-family: var(--font-kr-serif);
+  font-size: clamp(0.68rem, 0.74vw, 0.78rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.15s ease;
+}
+
+.book-club-card:hover .bcc-title {
+  color: var(--color-green);
+}
+
+.bcc-author {
+  display: none;
+}
+
+.bcc-divider {
+  display: none;
+}
+
+.bcc-meta {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.bcc-meta-item {
+  font-family: var(--font-sans);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-green);
+}
+
+/* --- Loading skeleton --------------------------------------------------- */
+.clubs-loading-state {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xs) 0;
+  width: 100%;
+}
+
+.clubs-loading-line {
+  height: 3px;
+  width: 60px;
+  background: var(--color-mint);
+  border-radius: 2px;
+  animation: skeletonPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes skeletonPulse {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clubs-loading-line {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .book-club-card:hover {
+    transform: none;
+  }
+
+  .world-spot:hover .marker-circle {
+    transform: none;
+  }
+
+  .world-spot:hover .marker-card-arrow {
+    transform: none;
+  }
+}
+
+/* --- Error & Empty state ------------------------------------------------ */
+.clubs-error-state,
+.clubs-empty-state {
+  padding: 4px 0;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.clubs-retry-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-orange);
+  padding: 0;
+  transition: opacity 0.18s ease;
+}
+
+.clubs-retry-btn:hover {
+  opacity: 0.75;
+}
+
+/* --- Guest CTA (기본 숨김 — JS 상태에 따라 표시) -------------------- */
+.main-guest-cta {
+  display: none;
+  text-align: center;
+  margin-top: clamp(28px, 3.5vh, 48px);
+  padding: var(--space-md) 0 var(--space-xl);
+}
+
+.guest-cta-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+.main-guest-login-btn {
+  background: none;
+  border: 1.5px solid var(--color-line);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: 4px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.main-guest-login-btn:hover {
+  background-color: var(--color-line);
+  color: #ffffff;
+}
+
+/* --- Intermediate / Tablet (768px ~ 1199px: 2단 유지) ------------------ */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .town-stage {
+    gap: clamp(20px, 3vw, 36px);
+  }
+
+  .town-hero {
+    flex: 0 0 clamp(260px, 34%, 320px);
+    max-width: 320px;
+  }
+
+  .town-hero-title {
+    font-size: clamp(2.4rem, 3.4vw, 3rem);
+  }
+
+  .town-hero-desc {
+    font-size: 0.86rem;
+    line-height: 1.65;
+    margin-bottom: var(--space-md);
+  }
+
+  .marker-card {
+    width: clamp(120px, 13vw, 150px);
+    padding: 5px 8px 5px 12px;
+  }
+
+  .book-club-card {
+    width: 66px;
+  }
+}
+
+/* --- Minimal Footer (공통 기본 스타일) -------------------------------- */
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2xl) 0 var(--space-xl);
+  margin-top: var(--space-3xl);
+  border-top: 1px solid var(--border-hairline);
+  background: #ffffff;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.footer-brand {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--text-primary);
+}
+
+.footer-desc {
+  font-family: var(--font-kr-serif);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.footer-link {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-link:hover {
+  color: var(--text-primary);
+}
+
+.footer-divider {
+  color: var(--border-hairline);
+  font-size: 0.65rem;
+}
+
+/* ==========================================================================
+   패널 공통 UI (닫기 버튼 & 헤더 — 공통 기본 스타일)
+   ========================================================================== */
+.panel-close-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.panel-close-btn:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.search-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.search-panel-title {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--color-orange);
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   데스크톱 & 태블릿 (768px 이상): 마을 일러스트 내부 건물 위 오버레이
+   ========================================================================== */
+@media (min-width: 768px) {
+
+  /* 01: BOOK CLUBS 건물 위쪽 열린 북클럽 목록 카드 */
+  .open-clubs-strip {
+    position: absolute;
+    top: 24%;
+    left: 51%;
+    transform: translateX(-50%);
+    width: clamp(260px, 28vw, 360px);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    padding: 14px 16px;
+    z-index: 25;
+    pointer-events: auto !important;
+    margin-top: 0;
+    border-top: none;
+  }
+
+  /* 02: SEARCH BOOKS 건물 위쪽 도서 검색 패널 */
+  #main-search-panel {
+    position: absolute;
+    top: 51%;
+    left: 17%;
+    transform: none;
+    width: clamp(260px, 22vw, 320px);
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    padding: 16px;
+    z-index: 25;
+    pointer-events: auto !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   데스크톱 와이드 (1200px 이상): Hero Overlay 레이아웃
+   ========================================================================== */
+@media (min-width: 1200px) {
+  .town-stage {
+    position: relative;
+    display: block;
+  }
+
+  .bookmate-world {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .town-hero {
+    position: absolute;
+    left: 0;
+    top: 20%;
+    transform: translateY(-50%);
+    width: 430px;
+    max-width: 430px;
+    z-index: 20;
+  }
+}
+
+/* ==========================================================================
+   BOOKMATE Mobile Comprehensive Responsive Styles (767px 이하 전용)
+   모바일 최적화: 320px, 360px, 390px, 430px, 767px 전 구간 지원
+   - 가로 넘침 방지 (overflow-wrap, box-sizing, 유연한 너비)
+   - 세로 스택 플로우 및 터치 타겟(최소 44px) 확보
+   ========================================================================== */
+@media (max-width: 767px) {
+
+  /* --- 1. Container & Global Spacing --- */
+  .app-container {
+    padding: var(--space-md) var(--space-md) var(--space-xl);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* 모든 입력요소/버튼/카드 너비 초과 방지 */
+  input, textarea, button, select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* --- 2. Mobile Header --- */
+  .app-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    align-items: center;
+  }
+
+  /* 모바일에서 READ · THINK · DISCUSS 태그 숨김 */
+  .brand-logo .brand-tag {
+    display: none;
+  }
+
+  /* 모바일에서 상단 WRITE ESSAY 버튼 숨김 (03 나의 생각 쓰기 메뉴로 접근) */
+  #start-review-header-btn {
+    display: none;
+  }
+
+  .header-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-auth-area {
+    display: flex;
+    align-items: center;
+  }
+
+  .header-user-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* 긴 사용자명 말줄임으로 LOGOUT 버튼 밀림 방지 (320px~767px) */
+  .header-user-name {
+    font-size: 0.72rem;
+    max-width: clamp(65px, 20vw, 100px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .header-auth-btn {
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* --- 3. Hero Section & Illustration --- */
+  .town-stage {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .town-hero {
+    flex: none;
+    max-width: 100%;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .hero-tagline {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    margin-bottom: 6px;
+  }
+
+  .town-hero-title {
+    font-size: clamp(2rem, 7.5vw, 2.5rem);
+    line-height: 1.18;
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+
+  .town-hero-desc {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    margin-bottom: 12px;
+    max-width: 100%;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  /* 데스크톱용 강제 줄바꿈을 모바일에서는 자연스러운 흐름으로 전환 */
+  .town-hero-desc br {
+    display: none;
+  }
+
+  .town-hero-tagline {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+  }
+
+  .bookmate-world {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .world-illustration-wrap {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .world-illustration {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* --- 4. Core Mobile Menus (3개 세로 카드: 01, 02, 03) --- */
+  .world-actions {
+    position: static;
+    inset: auto;
+    padding: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    pointer-events: auto;
+  }
+
+  /* 3개 카드 공통 컨테이너: 01, 02, 03 모두 완벽한 가로(Row) 정렬로 강제 통일 */
+  .world-spot,
+  .spot-clubs,
+  .spot-search,
+  .spot-essay {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    gap: 14px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--border-medium) !important;
+    border-radius: 10px !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    min-height: 64px !important;
+    cursor: pointer !important;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease !important;
+    margin: 0 !important;
+  }
+
+  .world-spot:hover,
+  .world-spot:active {
+    border-color: var(--color-orange) !important;
+    box-shadow: 0 4px 14px rgba(255, 138, 61, 0.14) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .world-spot:focus-visible {
+    outline: 2px solid var(--color-orange) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* 왼쪽 번호 배지 (01, 02, 03 동일: 32px 원형 오렌지 배지, 수직 중앙 정렬) */
+  .world-spot .marker-circle,
+  .spot-clubs .marker-circle,
+  .spot-search .marker-circle,
+  .spot-essay .marker-circle {
+    position: static !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background-color: var(--color-orange) !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.76rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+    box-shadow: 0 2px 5px rgba(255, 138, 61, 0.25) !important;
+    z-index: 1 !important;
+  }
+
+  /* 가운데 텍스트 + 우측 화살표 래퍼 */
+  .world-spot .marker-card,
+  .spot-clubs .marker-card,
+  .spot-search .marker-card,
+  .spot-essay .marker-card {
+    flex: 1 !important;
+    min-width: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 28px 0 0 !important; /* 오른쪽 끝 화살표 공간 28px 확보 */
+    width: auto !important;
+    max-width: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    text-align: left !important;
+    position: relative !important;
+  }
+
+  .marker-card-top {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 2px 0 !important;
+    text-align: left !important;
+  }
+
+  .marker-card-title {
+    font-family: var(--font-sans) !important;
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    line-height: 1.3 !important;
+    display: block !important;
+    text-align: left !important;
+    word-break: keep-all !important;
+  }
+
+  .marker-card-sub {
+    font-family: var(--font-sans) !important;
+    font-size: 0.76rem !important;
+    line-height: 1.4 !important;
+    color: var(--text-secondary) !important;
+    margin: 0 !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+    text-align: left !important;
+    display: block !important;
+  }
+
+  /* 우측 화살표: 01, 02, 03 모두 카드의 오른쪽 끝 수직 중앙에 일관되게 정렬 */
+  .marker-card-arrow {
+    position: absolute !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: var(--color-orange) !important;
+    line-height: 1 !important;
+    display: block !important;
+    transition: transform 0.18s ease !important;
+  }
+
+  .world-spot:hover .marker-card-arrow {
+    transform: translateY(-50%) translateX(2px) !important;
+  }
+
+  /* 모바일에서 중복되는 설명문 내부 인라인 화살표 숨김 */
+  .marker-card-arrow-inline {
+    display: none !important;
+  }
+
+  /* 모바일 메뉴 및 펼쳐지는 패널의 시각적 순서 (Order 연계) */
+  .spot-clubs {
+    order: 1 !important;
+  }
+
+  .open-clubs-strip {
+    order: 2 !important;
+  }
+
+  .spot-search {
+    order: 3 !important;
+  }
+
+  #main-search-panel {
+    order: 4 !important;
+  }
+
+  .spot-essay {
+    order: 5 !important;
+  }
+
+
+  /* --- 5. Open Clubs & Search Panels --- */
+  .open-clubs-strip {
+    position: static;
+    transform: none;
+    width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    padding: 14px;
+    margin-top: 0;
+    margin-bottom: 2px;
+    pointer-events: auto;
+  }
+
+  #main-search-panel {
+    position: static;
+    transform: none;
+    width: 100%;
+    box-sizing: border-box;
+    max-height: none;
+    overflow-y: visible;
+    background: #ffffff;
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    padding: 14px;
+    margin-top: 0 !important;
+    margin-bottom: 2px;
+    pointer-events: auto;
+  }
+
+  /* 닫기 버튼 터치 타겟 36px 이상 확보 */
+  .panel-close-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .book-clubs-grid {
+    gap: 10px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .book-club-card {
+    width: 72px;
+  }
+
+  .bcc-title {
+    font-size: 0.72rem;
+  }
+
+  /* 검색 입력창 및 버튼 모바일 최적화 */
+  .search-input-inline-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .search-inline-btn {
+    padding: 8px 4px 8px 8px;
+    font-size: 0.72rem;
+    min-height: 38px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .book-search-card {
+    padding: 10px 0;
+    gap: 10px;
+  }
+
+  .book-search-card-title,
+  .book-search-card-author {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  /* --- 6. Guest Login CTA & Minimal Footer --- */
+  .main-guest-cta {
+    margin-top: 28px;
+    padding: 16px 0 20px;
+  }
+
+  .guest-cta-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .main-guest-login-btn {
+    min-height: 44px;
+    padding: 10px 24px;
+    font-size: 0.75rem;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 36px;
+    padding: 20px 0 16px;
+  }
+
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .footer-link {
+    padding: 6px 0;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* --- 7. Modals (Auth Modal & Info Modal) --- */
+  .auth-modal-card,
+  .info-modal-card {
+    max-width: 100%;
+    width: 100%;
+    margin: 12px;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 16px;
+    box-sizing: border-box;
+  }
+
+  .auth-modal-close-btn {
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --- 8. Book Club View & Discussion Accordion (#view-club) --- */
+  .masthead-title {
+    font-size: 1.6rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .masthead-author {
+    font-size: 0.82rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .book-masthead-with-cover {
+    gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  .book-masthead-cover-wrap {
+    width: 60px;
+    height: 84px;
+  }
+
+  .question-row-header {
+    gap: 10px;
+  }
+
+  .question-topic-title {
+    font-size: 1rem;
+    word-break: keep-all;
+  }
+
+  .question-quote-summary {
+    font-size: 0.85rem;
+    word-break: keep-all;
+  }
+
+  .question-row-footer {
+    padding-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .question-actions-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .discuss-link-btn {
+    min-height: 44px;
+    padding: 10px 0;
+  }
+
+  .like-btn-editorial {
+    min-height: 38px;
+    padding: 4px 10px;
+  }
+
+  .btn-link-editorial {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 6px;
+  }
+
+  /* --- 9. Discussion View (#view-discussion) --- */
+  #back-to-club-btn {
+    min-height: 40px;
+  }
+
+  .selected-question-title {
+    font-size: 1.35rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .selected-question-title .question-topic-title {
+    font-size: 1.2rem;
+  }
+
+  .quote-item {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .quote-text {
+    font-size: 0.92rem;
+    padding-left: 10px;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  #my-answer-input {
+    font-size: 0.92rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #discussion-answer-form .btn {
+    min-height: 48px;
+  }
+
+  /* --- 10. AI Follow-Up View (#view-followup) --- */
+  #my-answer-preview {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .host-prompt-box {
+    padding: 14px;
+    margin: 14px 0;
+  }
+
+  .host-question-text {
+    font-size: 1.05rem;
+    line-height: 1.55;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  #followup-answer-form .btn {
+    min-height: 48px;
+  }
+
+  /* --- 11. Essay Style & Result Views (#view-review-style, #view-review-result) --- */
+  .style-editorial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .style-editorial-card {
+    padding: 14px 16px;
+  }
+
+  .style-editorial-card:nth-child(odd) {
+    border-right: none;
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  .essay-header {
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
+  .essay-title {
+    font-size: 1.5rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .essay-body {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  #view-review-result .btn {
+    min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   Info Modal (ABOUT / PRIVACY / HELP)
+   ========================================================================== */
+.info-modal-card {
+  max-width: 480px;
+}
+
+.info-modal-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.info-tab-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 2px;
+  transition: color 0.15s ease;
+}
+
+.info-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.info-tab-btn.active {
+  color: var(--color-orange);
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-orange);
+}
+
+.info-tab-divider {
+  font-size: 0.7rem;
+  color: var(--border-medium);
+}
+
+.info-panel-title {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+  line-height: 1.3;
+}
+
+.info-panel-lead {
+  font-family: var(--font-kr-serif);
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-md);
+}
+
+.info-panel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.info-panel-list li {
+  font-family: var(--font-kr-serif);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  padding-left: 14px;
+  position: relative;
+}
+
+.info-panel-list li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--color-green);
+  font-weight: bold;
+}
+
+.info-panel-list li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.info-help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+}
+
+.info-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.info-step-num {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-orange);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.info-step-item strong {
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.info-step-item p {
+  font-family: var(--font-kr-serif);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ==========================================================================
+   VIEW 7: 전용 독후감 작성 화면 (READ · THINK · WRITE)
+   ========================================================================== */
+#view-write-essay {
+  background: var(--bg-canvas);
+  min-height: calc(100vh - 120px);
+  padding: var(--space-xl) var(--space-md) var(--space-3xl);
+}
+
+.write-essay-container {
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.write-essay-nav {
+  margin-bottom: var(--space-lg);
+}
+
+.write-essay-back-btn {
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 4px;
+}
+
+/* 상단 타이포그래피 */
+.write-essay-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  padding-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.write-essay-tag {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-green);
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+}
+
+.write-essay-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  letter-spacing: -0.02em;
+}
+
+.write-essay-desc {
+  font-family: var(--font-kr-serif);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: var(--space-xl);
+}
+
+/* 진행 단계 표시 */
+.write-essay-steps-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 8px 18px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  margin: 0 auto;
+}
+
+.step-indicator-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.step-indicator-item.active {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.step-indicator-item.active .step-badge {
+  background: var(--color-orange);
+  color: #ffffff;
+}
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--border-medium);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.step-arrow {
+  color: var(--border-medium);
+  font-size: 0.8rem;
+  user-select: none;
+}
+
+/* 플로우 단계별 공통 헤더 */
+.essay-flow-step {
+  margin-bottom: var(--space-2xl);
+  padding-bottom: var(--space-2xl);
+  border-bottom: 1px dashed var(--border-medium);
+}
+
+.essay-flow-step:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: var(--space-lg);
+}
+
+.step-circle-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.step-header-text {
+  flex: 1;
+}
+
+.step-title {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.step-subtitle {
+  font-family: var(--font-kr-serif);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* 01 책 선택: 도서 카드 그리드 */
+.essay-books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.essay-book-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-pure);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.essay-book-card:hover,
+.essay-book-card:focus-visible {
+  border-color: var(--border-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.essay-book-cover {
+  width: 54px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.essay-book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.essay-book-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.essay-book-title {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.essay-book-author {
+  font-family: var(--font-kr-serif);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.essay-book-meta {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+.essay-empty-notice {
+  text-align: center;
+  padding: 32px 16px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  margin-bottom: var(--space-xl);
+  font-family: var(--font-kr-serif);
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.essay-empty-notice .sub-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* 선택된 책 요약 배너 */
+.selected-book-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 14px 18px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+}
+
+.selected-book-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.selected-book-cover-wrap {
+  width: 44px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-hairline);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-book-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selected-book-info {
+  min-width: 0;
+}
+
+.selected-book-tag {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-green);
+  display: block;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.selected-book-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-book-author {
+  font-family: var(--font-kr-serif);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.selected-book-change-btn {
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  white-space: nowrap;
+  border-radius: 4px;
+}
+
+/* 다른 책 검색 섹션 */
+.essay-search-section {
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.essay-search-header {
+  margin-bottom: var(--space-sm);
+}
+
+.essay-search-label {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.essay-search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.essay-search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.essay-search-result-item:hover {
+  border-color: var(--border-dark);
+  background: var(--surface-subtle);
+}
+
+.essay-search-result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.essay-search-result-title {
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.essay-search-result-meta {
+  font-family: var(--font-kr-serif);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* 02 내 생각 선택: 체크박스 리스트 */
+.answers-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.answers-count-label {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.direct-write-link-btn {
+  background: none;
+  border: none;
+  color: var(--color-green);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+}
+
+.direct-write-link-btn:hover {
+  color: #3b6b2c;
+}
+
+.essay-answers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.essay-answer-check-card {
+  border-color: var(--border-medium);
+}
+
+.essay-answer-check-card.checked {
+  border-color: var(--border-dark);
+  background: var(--surface-subtle);
+}
+
+.essay-answer-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-green);
+  margin-top: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.essay-answer-check-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.essay-answer-q-text {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.essay-answer-body-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.essay-no-answers-card {
+  padding: 24px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.no-answers-text {
+  font-family: var(--font-kr-serif);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 03 생각 작성·보완 */
+.thought-editors-wrap {
+  margin-bottom: var(--space-md);
+}
+
+.thought-editor-item {
+  background: #ffffff;
+  padding: 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  margin-bottom: var(--space-md);
+}
+
+.thought-editor-q-label {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  display: block;
+}
+
+.thought-editor-textarea {
+  width: 100%;
+  min-height: 110px;
+}
+
+.essay-privacy-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-lg);
+  padding: 8px 12px;
+  background: var(--surface-subtle);
+  border-radius: 4px;
+}
+
+.notice-icon {
+  font-size: 0.9rem;
+  color: var(--color-green);
+  font-weight: 700;
+}
+
+.essay-generate-btn {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 14px 20px;
+}
+
+.essay-generating-card {
+  margin-top: var(--space-lg);
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+}
+
+.generating-title {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.generating-sub {
+  font-family: var(--font-kr-serif);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.essay-error-card {
+  margin-top: var(--space-md);
+  padding: 16px;
+  background: var(--accent-burgundy-tint);
+  border: 1px solid var(--accent-burgundy);
+  border-radius: 6px;
+  text-align: center;
+}
+
+#write-essay-error-msg {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--accent-burgundy);
+  margin-bottom: 8px;
+}
+
+/* 독후감 결과 영역 */
+.essay-result-card {
+  background: var(--surface-pure);
+  border: 1px solid var(--border-dark);
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.result-card-header {
+  margin-bottom: var(--space-md);
+}
+
+.result-tag {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent-burgundy);
+  text-transform: uppercase;
+}
+
+.result-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.result-sub {
+  font-family: var(--font-kr-serif);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.thought-modified-banner {
+  background: #fff8e6;
+  border: 1px solid #ffd166;
+  color: #8c5a00;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+
+.essay-result-textarea {
+  width: 100%;
+  font-family: var(--font-kr-serif);
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--text-primary);
+  min-height: 280px;
+  padding: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-medium);
+  resize: vertical;
+}
+
+.result-action-buttons {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-secondary-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* 모바일 반응형 조절 (767px 이하) */
+@media (max-width: 767px) {
+  #view-write-essay {
+    padding: var(--space-lg) var(--space-sm) var(--space-2xl);
+  }
+
+  .write-essay-title {
+    font-size: 1.65rem;
+  }
+
+  .write-essay-steps-indicator {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .step-indicator-item {
+    font-size: 0.72rem;
+  }
+
+  .step-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+
+  .essay-books-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step-title {
+    font-size: 1.1rem;
+  }
+
+  .essay-result-card {
+    padding: 16px;
+  }
+}
