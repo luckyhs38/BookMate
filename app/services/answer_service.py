@@ -73,7 +73,7 @@ def get_user_answers_by_book_id(book_id: str, user_id: str) -> list[dict]:
         FROM public_answers pa
         INNER JOIN questions q ON pa.question_id = q.id
         WHERE q.book_id = %s AND pa.user_id = %s
-        ORDER BY COALESCE(pa.updated_at, pa.created_at) DESC
+        ORDER BY q.created_at ASC
     """
     with get_db_connection() as conn:
         rows = conn.execute(query, (book_id, user_id)).fetchall()

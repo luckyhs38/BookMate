@@ -582,7 +582,12 @@
           <!-- 저장된 답변 목록 (체크박스) -->
           <div id="write-essay-answers-container" style="display: none;">
             <div class="answers-action-bar">
-              <span id="write-essay-answers-count-label" class="answers-count-label"></span>
+              <div class="answers-action-left">
+                <span id="write-essay-answers-count-label" class="answers-count-label"></span>
+                <button type="button" id="write-essay-select-all-btn" class="essay-select-all-btn" style="display: none;">
+                  전체 선택
+                </button>
+              </div>
               <button type="button" id="write-essay-direct-write-btn" class="direct-write-link-btn">
                 + 직접 새로 쓰기
               </button>

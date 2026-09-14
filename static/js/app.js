@@ -1590,6 +1590,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const writeEssayNoAnswersBox = document.getElementById("write-essay-no-answers-box");
   const writeEssayAnswersContainer = document.getElementById("write-essay-answers-container");
   const writeEssayAnswersCountLabel = document.getElementById("write-essay-answers-count-label");
+  const writeEssaySelectAllBtn = document.getElementById("write-essay-select-all-btn");
   const writeEssayDirectWriteBtn = document.getElementById("write-essay-direct-write-btn");
   const writeEssayAnswersList = document.getElementById("write-essay-answers-list");
 
@@ -1683,6 +1684,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (writeEssayThoughtModifiedBanner) writeEssayThoughtModifiedBanner.style.display = "none";
     if (writeEssayGeneratingLoading) writeEssayGeneratingLoading.style.display = "none";
     if (writeEssayGenerateError) writeEssayGenerateError.style.display = "none";
+    updateSelectAllBtnState();
   }
 
   function resetWriteEssayState() {
@@ -1925,6 +1927,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       writeEssayAnswersList.appendChild(card);
     });
+
+    updateSelectAllBtnState();
   }
 
   // 답변 체크/해제 처리
@@ -1942,7 +1946,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (writeEssayStep3El) writeEssayStep3El.style.display = "block";
       renderSelectedThoughtsEditors();
       updateStepIndicator(3);
-      smoothScrollIfNeeded(writeEssayStep3El);
+      //smoothScrollIfNeeded(writeEssayStep3El);
     } else {
       // 선택 해제 시: 만약 사용자가 내용을 수정한 상태라면 확인
       const orig = ans.answer;
@@ -1964,6 +1968,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateStepIndicator(2);
       }
     }
+    updateSelectAllBtnState();
   }
 
   // 직접 새로 쓰기 모드 전환
@@ -1987,6 +1992,88 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateStepIndicator(3);
     smoothScrollIfNeeded(writeEssayStep3El);
+    updateSelectAllBtnState();
+  }
+
+  // 전체 선택 버튼 상태(라벨/클래스) 동기화
+  function updateSelectAllBtnState() {
+    if (!writeEssaySelectAllBtn) return;
+    const total = writeEssayState.allAnswers ? writeEssayState.allAnswers.length : 0;
+    if (total === 0) {
+      writeEssaySelectAllBtn.style.display = "none";
+      return;
+    }
+    writeEssaySelectAllBtn.style.display = "inline-flex";
+    const selected = writeEssayState.selectedAnswerIds.size;
+    if (selected === total) {
+      writeEssaySelectAllBtn.textContent = "전체 해제";
+      writeEssaySelectAllBtn.classList.add("is-all-selected");
+    } else {
+      writeEssaySelectAllBtn.textContent = "전체 선택";
+      writeEssaySelectAllBtn.classList.remove("is-all-selected");
+    }
+  }
+
+  // 전체 선택 / 해제 토글 핸들러
+  function handleSelectAllToggle() {
+    const total = writeEssayState.allAnswers.length;
+    if (total === 0) return;
+    const isAllSelected = writeEssayState.selectedAnswerIds.size === total;
+
+    if (!isAllSelected) {
+      // 전체 선택
+      writeEssayState.allAnswers.forEach(ans => {
+        writeEssayState.selectedAnswerIds.add(ans.id);
+        if (!writeEssayState.editedAnswers.has(ans.id)) {
+          writeEssayState.editedAnswers.set(ans.id, ans.answer);
+        }
+      });
+
+      if (writeEssayAnswersList) {
+        writeEssayAnswersList.querySelectorAll(".essay-answer-check-card").forEach(c => {
+          c.classList.add("checked");
+          const cb = c.querySelector("input[type='checkbox']");
+          if (cb) cb.checked = true;
+        });
+      }
+
+      writeEssayState.isFreeMode = false;
+      if (writeEssayStep3El) writeEssayStep3El.style.display = "block";
+      renderSelectedThoughtsEditors();
+      updateStepIndicator(3);
+      updateSelectAllBtnState();
+    } else {
+      // 전체 해제 시: 내용 수정된 항목이 있으면 확인
+      const hasEdited = writeEssayState.allAnswers.some(ans => {
+        const current = writeEssayState.editedAnswers.get(ans.id);
+        return current && current.trim() !== ans.answer.trim();
+      });
+
+      if (hasEdited) {
+        if (!confirm("작성 및 수정한 생각 내용이 모두 제거됩니다. 전체 해제하시겠습니까?")) {
+          return;
+        }
+      }
+
+      writeEssayState.selectedAnswerIds.clear();
+      writeEssayState.editedAnswers.clear();
+
+      if (writeEssayAnswersList) {
+        writeEssayAnswersList.querySelectorAll(".essay-answer-check-card").forEach(c => {
+          c.classList.remove("checked");
+          const cb = c.querySelector("input[type='checkbox']");
+          if (cb) cb.checked = false;
+        });
+      }
+
+      renderSelectedThoughtsEditors();
+
+      if (!writeEssayState.extraThought.trim()) {
+        if (writeEssayStep3El) writeEssayStep3El.style.display = "none";
+        updateStepIndicator(2);
+      }
+      updateSelectAllBtnState();
+    }
   }
 
   // 03 생각 작성: 선택된 생각들 textarea 동적 생성
@@ -2003,33 +2090,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (writeEssayExtraThoughtBox) writeEssayExtraThoughtBox.style.display = "block";
     if (writeEssayFreeThoughtBox) writeEssayFreeThoughtBox.style.display = "none";
 
-    writeEssayState.selectedAnswerIds.forEach(id => {
-      const ans = writeEssayState.allAnswers.find(a => a.id === id);
-      if (!ans) return;
+    writeEssayState.allAnswers
+      .filter(a => writeEssayState.selectedAnswerIds.has(a.id))
+      .forEach(ans => {
 
-      const itemBox = document.createElement("div");
-      itemBox.className = "thought-editor-item";
 
-      const label = document.createElement("label");
-      label.className = "thought-editor-q-label";
-      label.textContent = `Q. ${ans.question_content}`;
+        const itemBox = document.createElement("div");
+        itemBox.className = "thought-editor-item";
 
-      const textarea = document.createElement("textarea");
-      textarea.className = "form-textarea-editorial thought-editor-textarea";
-      textarea.value = writeEssayState.editedAnswers.get(id) || ans.answer;
-      textarea.placeholder = "내용을 자유롭게 다듬어 주세요.";
+        const label = document.createElement("label");
+        label.className = "thought-editor-q-label";
+        label.textContent = `Q. ${ans.question_content}`;
 
-      textarea.addEventListener("input", (e) => {
-        writeEssayState.editedAnswers.set(id, e.target.value);
-        if (writeEssayState.generatedReview && writeEssayThoughtModifiedBanner) {
-          writeEssayThoughtModifiedBanner.style.display = "block";
-        }
+        const textarea = document.createElement("textarea");
+        textarea.className = "form-textarea-editorial thought-editor-textarea";
+        textarea.value = writeEssayState.editedAnswers.get(id) || ans.answer;
+        textarea.placeholder = "내용을 자유롭게 다듬어 주세요.";
+
+        textarea.addEventListener("input", (e) => {
+          writeEssayState.editedAnswers.set(id, e.target.value);
+          if (writeEssayState.generatedReview && writeEssayThoughtModifiedBanner) {
+            writeEssayThoughtModifiedBanner.style.display = "block";
+          }
+        });
+
+        itemBox.appendChild(label);
+        itemBox.appendChild(textarea);
+        writeEssaySelectedThoughtsList.appendChild(itemBox);
       });
-
-      itemBox.appendChild(label);
-      itemBox.appendChild(textarea);
-      writeEssaySelectedThoughtsList.appendChild(itemBox);
-    });
   }
 
   // 더 담고 싶은 생각 입력 리스너
@@ -2050,6 +2138,11 @@ document.addEventListener("DOMContentLoaded", () => {
         writeEssayThoughtModifiedBanner.style.display = "block";
       }
     });
+  }
+
+  // 전체 선택 버튼 클릭 리스너
+  if (writeEssaySelectAllBtn) {
+    writeEssaySelectAllBtn.addEventListener("click", handleSelectAllToggle);
   }
 
   // 직접 새로 쓰기 링크 버튼
@@ -2202,16 +2295,18 @@ document.addEventListener("DOMContentLoaded", () => {
         answer: freeText
       });
     } else {
-      writeEssayState.selectedAnswerIds.forEach(id => {
-        const ansObj = writeEssayState.allAnswers.find(a => a.id === id);
-        const edited = writeEssayState.editedAnswers.get(id) || (ansObj ? ansObj.answer : "");
-        if (edited.trim()) {
-          discussions.push({
-            question: ansObj ? ansObj.question_content : "책에 대한 생각",
-            answer: edited.trim()
-          });
-        }
-      });
+      writeEssayState.allAnswers
+        .filter(a => writeEssayState.selectedAnswerIds.has(a.id))
+        .forEach(ansObj => {
+          const id = ansObj.id;
+          const edited = writeEssayState.editedAnswers.get(id) || ansObj.answer;
+          if (edited.trim()) {
+            discussions.push({
+              question: ansObj ? ansObj.question_content : "책에 대한 생각",
+              answer: edited.trim()
+            });
+          }
+        });
 
       if (writeEssayState.extraThought.trim()) {
         discussions.push({
