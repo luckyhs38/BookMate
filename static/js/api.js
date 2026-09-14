@@ -157,6 +157,18 @@ const BookMateAPI = {
     });
   },
 
+  async changePassword(currentPassword, newPassword, revokeOtherSessions = false) {
+    return this.request("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        revoke_other_sessions: revokeOtherSessions
+      }),
+      credentials: "same-origin"
+    });
+  },
+
   // 10. 나의 생각 쓰기 / 독후감 전용 API
   async getMyAnsweredBooks() {
     return this.request("/api/users/me/books", {

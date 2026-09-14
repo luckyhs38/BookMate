@@ -138,6 +138,16 @@ class UserResponse(BaseModel):
     name: str | None = Field(default=None, description="사용자 닉네임/이름")
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=128, description="현재 비밀번호")
+    new_password: str = Field(..., min_length=8, max_length=128, description="새 비밀번호 (최소 8자)")
+    revoke_other_sessions: bool = Field(default=False, description="다른 모든 기기 세션 무효화 여부")
+
+
+class ChangePasswordResponse(BaseModel):
+    message: str = Field(default="비밀번호가 변경되었습니다.", description="결과 안내 메시지")
+
+
 # 6. 나의 생각 쓰기 전용 독후감 작성 모델
 class MyAnsweredBookResponse(BaseModel):
     """로그인 사용자가 답변을 남긴 책 응답 모델"""

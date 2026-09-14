@@ -53,6 +53,11 @@ document.addEventListener("DOMContentLoaded", () => {
       updateMainForAuthState();
     }
 
+    // 마이페이지 이탈 시 비밀번호 입력값 및 변경 폼 상태 정리 (보안)
+    if (viewName !== "myPage" && typeof closeChangePasswordModal === "function") {
+      closeChangePasswordModal(true);
+    }
+
     // 브라우저 방문 기록(History)에 현재 뷰 상태 기록
     if (pushHistory) {
       const hash = viewName === "main" ? "" : `#${viewName}`;
@@ -65,7 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 브라우저 뒤로가기 / 앞으로가기(popstate) 이벤트 리스너
   window.addEventListener("popstate", (e) => {
-    // 뒤로가기 시 인증 모달이 열려 있다면 모달만 부드럽게 닫고 현재 페이지 유지
+    // 뒤로가기 시 모달이 열려 있다면 모달만 부드럽게 닫고 현재 페이지 유지
+    if (typeof closeChangePasswordModal === "function" && document.getElementById("change-password-modal")?.style.display !== "none") {
+      closeChangePasswordModal(true);
+      return;
+    }
+
     if (authModal && authModal.style.display !== "none") {
       closeAuthModal(true);
       return;
@@ -2353,7 +2363,333 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentMyPageBook = null;
   let myPageReqSeq = 0;
 
+  // -------------------------------------------------------------------------
+  // 마이페이지 비밀번호 변경 관련 DOM 요소 및 핸들러 (모달 팝업)
+  // -------------------------------------------------------------------------
+  const myPageEditProfileBtn = document.getElementById("my-page-edit-profile-btn");
+  const changePasswordModal = document.getElementById("change-password-modal");
+  const changePasswordModalCloseBtn = document.getElementById("change-password-modal-close-btn");
+  const changePasswordModalTitle = document.getElementById("change-password-modal-title");
+  const myPageChangePwdAlert = document.getElementById("my-page-change-password-alert");
+  const myPageChangePwdForm = document.getElementById("my-page-change-password-form");
+  const myPageCurrentPwdInput = document.getElementById("my-page-current-password");
+  const myPageCurrentPwdErr = document.getElementById("my-page-current-pwd-err");
+  const myPageNewPwdInput = document.getElementById("my-page-new-password");
+  const myPageNewPwdErr = document.getElementById("my-page-new-pwd-err");
+  const myPageConfirmPwdInput = document.getElementById("my-page-confirm-password");
+  const myPageConfirmPwdErr = document.getElementById("my-page-confirm-pwd-err");
+  const myPageCancelPwdBtn = document.getElementById("my-page-cancel-password-btn");
+  const myPageSubmitPwdBtn = document.getElementById("my-page-submit-password-btn");
+
+  let isSubmittingPasswordChange = false;
+
+  // 비밀번호 입력값 및 오류 메시지 즉시 초기화 (보안 원칙: 입력값 잔류 방지)
+  function resetChangePasswordForm() {
+    if (myPageCurrentPwdInput) {
+      myPageCurrentPwdInput.value = "";
+      myPageCurrentPwdInput.type = "password";
+    }
+    if (myPageNewPwdInput) {
+      myPageNewPwdInput.value = "";
+      myPageNewPwdInput.type = "password";
+    }
+    if (myPageConfirmPwdInput) {
+      myPageConfirmPwdInput.value = "";
+      myPageConfirmPwdInput.type = "password";
+    }
+
+    // 각 필드의 표시·숨김 버튼 초기화
+    if (changePasswordModal) {
+      const toggleBtns = changePasswordModal.querySelectorAll(".pwd-toggle-btn");
+      toggleBtns.forEach(btn => {
+        const textSpan = btn.querySelector(".pwd-toggle-text");
+        if (textSpan) textSpan.textContent = "표시";
+        const targetId = btn.getAttribute("data-target");
+        if (targetId) {
+          const labelPrefix = targetId.includes("current") ? "현재 비밀번호" : targetId.includes("confirm") ? "새 비밀번호 확인" : "새 비밀번호";
+          btn.setAttribute("aria-label", `${labelPrefix} 표시 전환`);
+        }
+      });
+    }
+
+    clearPasswordErrors();
+    if (myPageChangePwdAlert) {
+      myPageChangePwdAlert.style.display = "none";
+      myPageChangePwdAlert.textContent = "";
+      myPageChangePwdAlert.className = "auth-error-msg";
+    }
+
+    if (myPageSubmitPwdBtn) {
+      myPageSubmitPwdBtn.disabled = false;
+      myPageSubmitPwdBtn.textContent = "비밀번호 변경";
+    }
+    if (myPageCancelPwdBtn) {
+      myPageCancelPwdBtn.disabled = false;
+    }
+    if (changePasswordModalCloseBtn) {
+      changePasswordModalCloseBtn.disabled = false;
+    }
+    isSubmittingPasswordChange = false;
+  }
+
+  function clearPasswordErrors() {
+    if (myPageCurrentPwdErr) {
+      myPageCurrentPwdErr.style.display = "none";
+      myPageCurrentPwdErr.textContent = "";
+    }
+    if (myPageNewPwdErr) {
+      myPageNewPwdErr.style.display = "none";
+      myPageNewPwdErr.textContent = "";
+    }
+    if (myPageConfirmPwdErr) {
+      myPageConfirmPwdErr.style.display = "none";
+      myPageConfirmPwdErr.textContent = "";
+    }
+  }
+
+  function closeChangePasswordModal(force = false) {
+    if (!changePasswordModal) return;
+    if (isSubmittingPasswordChange && !force) return;
+
+    resetChangePasswordForm();
+    changePasswordModal.style.display = "none";
+    document.body.style.overflow = "";
+
+    if (myPageEditProfileBtn) {
+      myPageEditProfileBtn.setAttribute("aria-expanded", "false");
+      if (!force && myPageEditProfileBtn.offsetParent !== null) {
+        myPageEditProfileBtn.focus();
+      }
+    }
+  }
+
+  function openChangePasswordModal() {
+    if (isSubmittingPasswordChange || !changePasswordModal) return;
+
+    resetChangePasswordForm();
+    document.body.style.overflow = "hidden";
+    changePasswordModal.style.display = "flex";
+
+    if (myPageEditProfileBtn) {
+      myPageEditProfileBtn.setAttribute("aria-expanded", "true");
+    }
+
+    // 모바일 가상 키보드가 바로 올라오지 않도록 타이틀에 포커스
+    setTimeout(() => {
+      if (changePasswordModalTitle) {
+        changePasswordModalTitle.focus();
+      }
+    }, 30);
+  }
+
+  // 비밀번호 표시/숨김 토글 핸들러 등록
+  if (changePasswordModal) {
+    changePasswordModal.querySelectorAll(".pwd-toggle-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+
+        const textSpan = btn.querySelector(".pwd-toggle-text");
+        if (textSpan) {
+          textSpan.textContent = isPassword ? "숨김" : "표시";
+        }
+        const labelPrefix = targetId.includes("current") ? "현재 비밀번호" : targetId.includes("confirm") ? "새 비밀번호 확인" : "새 비밀번호";
+        btn.setAttribute("aria-label", `${labelPrefix} ${isPassword ? "숨기기" : "표시하기"}`);
+      });
+    });
+  }
+
+  // '내 정보 수정' 버튼 클릭 시 모달 열기
+  if (myPageEditProfileBtn) {
+    myPageEditProfileBtn.addEventListener("click", () => {
+      openChangePasswordModal();
+    });
+  }
+
+  // '닫기(X)' 버튼 클릭 시 모달 닫기
+  if (changePasswordModalCloseBtn) {
+    changePasswordModalCloseBtn.addEventListener("click", () => {
+      closeChangePasswordModal(false);
+    });
+  }
+
+  // '취소' 버튼 클릭 시 모달 닫기
+  if (myPageCancelPwdBtn) {
+    myPageCancelPwdBtn.addEventListener("click", () => {
+      closeChangePasswordModal(false);
+    });
+  }
+
+  // ESC 키로 팝업 닫기 (요청 처리 중에는 일시적으로 막힘)
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && changePasswordModal && changePasswordModal.style.display !== "none") {
+      if (!isSubmittingPasswordChange) {
+        closeChangePasswordModal(false);
+      }
+    }
+  });
+
+  // 팝업 내부 포커스 트랩 (접근성: Tab 이동이 모달 밖으로 나가지 않도록 방지)
+  if (changePasswordModal) {
+    changePasswordModal.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+
+      const focusableSelectors = 'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const focusables = Array.from(changePasswordModal.querySelectorAll(focusableSelectors))
+        .filter(el => el.offsetWidth > 0 || el.offsetHeight > 0);
+
+      if (focusables.length === 0) return;
+
+      const firstEl = focusables[0];
+      const lastEl = focusables[focusables.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl || document.activeElement === changePasswordModalTitle) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    });
+  }
+
+  // 비밀번호 변경 폼 제출 이벤트 핸들러
+  if (myPageChangePwdForm) {
+    myPageChangePwdForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isSubmittingPasswordChange) return;
+
+      clearPasswordErrors();
+      if (myPageChangePwdAlert) {
+        myPageChangePwdAlert.style.display = "none";
+        myPageChangePwdAlert.textContent = "";
+        myPageChangePwdAlert.className = "auth-error-msg";
+      }
+
+      const currentPassword = myPageCurrentPwdInput ? myPageCurrentPwdInput.value : "";
+      const newPassword = myPageNewPwdInput ? myPageNewPwdInput.value : "";
+      const confirmPassword = myPageConfirmPwdInput ? myPageConfirmPwdInput.value : "";
+
+      let hasError = false;
+
+      // 1. 필수 입력 여부 및 일치/길이 검증 (공백 trim/변환 금지)
+      if (!currentPassword) {
+        if (myPageCurrentPwdErr) {
+          myPageCurrentPwdErr.textContent = "현재 비밀번호를 입력해 주세요.";
+          myPageCurrentPwdErr.style.display = "block";
+        }
+        hasError = true;
+      }
+
+      if (!newPassword) {
+        if (myPageNewPwdErr) {
+          myPageNewPwdErr.textContent = "새 비밀번호를 입력해 주세요.";
+          myPageNewPwdErr.style.display = "block";
+        }
+        hasError = true;
+      } else if (newPassword.length < 8) {
+        if (myPageNewPwdErr) {
+          myPageNewPwdErr.textContent = "새 비밀번호는 최소 8자 이상이어야 합니다.";
+          myPageNewPwdErr.style.display = "block";
+        }
+        hasError = true;
+      } else if (newPassword.length > 128) {
+        if (myPageNewPwdErr) {
+          myPageNewPwdErr.textContent = "새 비밀번호는 최대 128자 이하이어야 합니다.";
+          myPageNewPwdErr.style.display = "block";
+        }
+        hasError = true;
+      }
+
+      if (!confirmPassword) {
+        if (myPageConfirmPwdErr) {
+          myPageConfirmPwdErr.textContent = "새 비밀번호 확인을 입력해 주세요.";
+          myPageConfirmPwdErr.style.display = "block";
+        }
+        hasError = true;
+      } else if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        if (myPageConfirmPwdErr) {
+          myPageConfirmPwdErr.textContent = "새 비밀번호가 일치하지 않습니다.";
+          myPageConfirmPwdErr.style.display = "block";
+        }
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // 중복 요청 방지 및 로딩 상태 (X, 취소, ESC 닫기도 잠금)
+      isSubmittingPasswordChange = true;
+      if (myPageSubmitPwdBtn) {
+        myPageSubmitPwdBtn.disabled = true;
+        myPageSubmitPwdBtn.textContent = "변경 중…";
+      }
+      if (myPageCancelPwdBtn) {
+        myPageCancelPwdBtn.disabled = true;
+      }
+      if (changePasswordModalCloseBtn) {
+        changePasswordModalCloseBtn.disabled = true;
+      }
+
+      try {
+        const result = await BookMateAPI.changePassword(currentPassword, newPassword, false);
+
+        // 성공 시: 비밀번호 입력 즉시 지우고 팝업을 닫은 뒤, 확인 가능한 완료 토스트 안내 표시
+        resetChangePasswordForm();
+        closeChangePasswordModal(true);
+        showToast(result.message || "비밀번호가 성공적으로 변경되었습니다.");
+      } catch (err) {
+        // 실패 시: 닫기 버튼 및 제출 버튼 상태 복원
+        isSubmittingPasswordChange = false;
+        if (myPageSubmitPwdBtn) {
+          myPageSubmitPwdBtn.disabled = false;
+          myPageSubmitPwdBtn.textContent = "비밀번호 변경";
+        }
+        if (myPageCancelPwdBtn) {
+          myPageCancelPwdBtn.disabled = false;
+        }
+        if (changePasswordModalCloseBtn) {
+          changePasswordModalCloseBtn.disabled = false;
+        }
+
+        const errorMsg = err.message || "비밀번호 변경에 실패했습니다.";
+
+        if (errorMsg.includes("현재 비밀번호가 올바르지 않습니다")) {
+          if (myPageCurrentPwdErr) {
+            myPageCurrentPwdErr.textContent = errorMsg;
+            myPageCurrentPwdErr.style.display = "block";
+          }
+        } else if (errorMsg.includes("최소 8자") || errorMsg.includes("최대 128자")) {
+          if (myPageNewPwdErr) {
+            myPageNewPwdErr.textContent = errorMsg;
+            myPageNewPwdErr.style.display = "block";
+          }
+        } else if (errorMsg.includes("로그인 시간이 만료") || errorMsg.includes("로그인이 필요")) {
+          showToast("로그인 시간이 만료되었습니다. 다시 로그인해 주세요.");
+          closeChangePasswordModal(true);
+          BookMateState.clearCurrentUser();
+          updateHeaderAuthUI(null);
+          openAuthModal("login");
+        } else {
+          if (myPageChangePwdAlert) {
+            myPageChangePwdAlert.textContent = errorMsg;
+            myPageChangePwdAlert.className = "auth-error-msg";
+            myPageChangePwdAlert.style.display = "block";
+          }
+        }
+      }
+    });
+  }
+
   function resetMyPageState() {
+    closeChangePasswordModal(true);
     currentMyPageBook = null;
     myPageReqSeq = 0;
     if (myPageBooksList) myPageBooksList.innerHTML = "";
@@ -2377,6 +2713,8 @@ document.addEventListener("DOMContentLoaded", () => {
       openAuthModal("login");
       return;
     }
+
+    closeChangePasswordModal(true);
 
     const user = BookMateState.currentUser;
     const name = user.displayName || "독자";
@@ -2703,6 +3041,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 마이페이지 이벤트 리스너 연결
   if (myPageBackBtn) {
     myPageBackBtn.addEventListener("click", () => {
+      closeChangePasswordModal(true);
       switchView("main");
     });
   }

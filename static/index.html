@@ -7,7 +7,7 @@
   <title>BOOKMATE — 같은 책, 다른 생각</title>
   <meta name="description"
     content="책 속에서 발견한 질문에 답하고, 같은 책을 읽은 다른 독자의 깊은 시선을 마주하세요. 나만의 단단한 생각을 한 편의 에세이로 완성하는 공개 북클럽.">
-  <link rel="stylesheet" href="/static/css/style.css?v=20260911_4">
+  <link rel="stylesheet" href="/static/css/style.css?v=20260914_1">
 </head>
 
 <body>
@@ -730,6 +730,9 @@
                 <span id="my-page-user-email" class="profile-email"></span>
               </div>
             </div>
+            <button type="button" id="my-page-edit-profile-btn" class="profile-edit-btn" aria-haspopup="dialog" aria-controls="change-password-modal">
+              내 정보 수정
+            </button>
           </div>
         </header>
 
@@ -1005,11 +1008,78 @@
     </div>
   </div>
 
+  <!-- ============================================================= -->
+  <!-- Change Password Modal                                         -->
+  <!-- ============================================================= -->
+  <div id="change-password-modal" class="auth-modal-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="change-password-modal-title" style="display: none;">
+    <div class="auth-modal-card">
+      <button type="button" class="auth-modal-close-btn" id="change-password-modal-close-btn" aria-label="닫기">
+        ✕
+      </button>
+
+      <h2 id="change-password-modal-title" class="auth-modal-title" tabindex="-1">비밀번호 변경</h2>
+
+      <div id="my-page-change-password-alert" class="auth-error-msg" style="display: none;" role="alert" aria-live="polite"></div>
+
+      <form id="my-page-change-password-form" class="auth-form" novalidate autocomplete="off">
+        <!-- 현재 비밀번호 -->
+        <div class="form-group">
+          <label class="form-label" for="my-page-current-password">CURRENT PASSWORD</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="my-page-current-password" class="form-input-editorial"
+              autocomplete="current-password" placeholder="현재 비밀번호 입력" required aria-describedby="my-page-current-pwd-err">
+            <button type="button" class="pwd-toggle-btn" data-target="my-page-current-password" aria-label="현재 비밀번호 표시 전환">
+              <span class="pwd-toggle-text">표시</span>
+            </button>
+          </div>
+          <span id="my-page-current-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+        </div>
+
+        <!-- 새 비밀번호 -->
+        <div class="form-group">
+          <label class="form-label" for="my-page-new-password">NEW PASSWORD</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="my-page-new-password" class="form-input-editorial"
+              autocomplete="new-password" placeholder="새 비밀번호 (8자 이상)" required aria-describedby="my-page-new-pwd-err">
+            <button type="button" class="pwd-toggle-btn" data-target="my-page-new-password" aria-label="새 비밀번호 표시 전환">
+              <span class="pwd-toggle-text">표시</span>
+            </button>
+          </div>
+          <span id="my-page-new-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+        </div>
+
+        <!-- 새 비밀번호 확인 -->
+        <div class="form-group">
+          <label class="form-label" for="my-page-confirm-password">CONFIRM NEW PASSWORD</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="my-page-confirm-password" class="form-input-editorial"
+              autocomplete="new-password" placeholder="새 비밀번호 다시 입력" required aria-describedby="my-page-confirm-pwd-err">
+            <button type="button" class="pwd-toggle-btn" data-target="my-page-confirm-password" aria-label="새 비밀번호 확인 표시 전환">
+              <span class="pwd-toggle-text">표시</span>
+            </button>
+          </div>
+          <span id="my-page-confirm-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+        </div>
+
+        <!-- 하단: 취소 / 비밀번호 변경 버튼 -->
+        <div class="change-password-modal-actions" style="display: flex; gap: 10px; margin-top: var(--space-lg);">
+          <button type="button" id="my-page-cancel-password-btn" class="btn btn-secondary" style="flex: 1;">
+            취소
+          </button>
+          <button type="submit" id="my-page-submit-password-btn" class="btn btn-primary" style="flex: 1;">
+            비밀번호 변경
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Client JavaScript Modules -->
   <script src="/static/js/state.js?v=20260911_4"></script>
-  <script src="/static/js/api.js?v=20260911_4"></script>
+  <script src="/static/js/api.js?v=20260914_1"></script>
   <script src="/static/js/components.js?v=20260911_4"></script>
-  <script src="/static/js/app.js?v=20260911_4"></script>
+  <script src="/static/js/app.js?v=20260914_2"></script>
 </body>
 
 </html>

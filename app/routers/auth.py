@@ -15,7 +15,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from app.config import settings
 from app.dependencies import get_current_user
-from app.models import SignUpRequest, SignInRequest, UserResponse
+from app.models import (
+    SignUpRequest,
+    SignInRequest,
+    UserResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -324,3 +330,135 @@ async def get_my_info(current_user: UserResponse = Depends(get_current_user)):
     인증 실패 시 401 Unauthorized 반환.
     """
     return current_user
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse, summary="비밀번호 변경")
+async def change_password(
+    request: Request,
+    response: Response,
+    payload: ChangePasswordRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    FastAPI BFF를 통해 Neon Auth 비밀번호 변경을 중계한다.
+    - get_current_user를 통해 현재 로그인된 사용자 본인 여부를 반드시 검증한다.
+    - CSRF 방어를 위해 Origin 헤더를 검증한다.
+    - 현재 비밀번호의 일치 여부는 Neon Auth 공식 API(/change-password)를 통해 확인한다.
+    - 비밀번호 및 민감정보는 로그에 일절 출력하지 않는다.
+    """
+    _check_csrf_origin(request)
+
+    if not settings.NEON_AUTH_BASE_URL:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="인증 서비스 설정이 완료되지 않았습니다.",
+        )
+
+    session_token = request.cookies.get("bm_session")
+    if not session_token:
+        auth_header = request.headers.get("Authorization") or ""
+        if auth_header.lower().startswith("bearer "):
+            session_token = auth_header[7:].strip()
+
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="로그인 시간이 만료되었습니다. 다시 로그인해 주세요.",
+        )
+
+    base_url = settings.NEON_AUTH_BASE_URL.rstrip("/")
+    url = f"{base_url}/change-password"
+    req_body = {
+        "currentPassword": payload.current_password,
+        "newPassword": payload.new_password,
+        "revokeOtherSessions": payload.revoke_other_sessions,
+    }
+
+    origin = _get_auth_upstream_origin(request)
+    headers = {
+        "Cookie": f"__Secure-neon-auth.session_token={session_token}; better-auth.session_token={session_token}; __Secure-neonauth.session_token={session_token}",
+        "Authorization": f"Bearer {session_token}",
+        "Accept": "application/json",
+        "Origin": origin,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, json=req_body, headers=headers)
+            # upstream Neon Auth가 Invalid origin(400/403)을 반환한 경우 기본 신뢰 origin으로 안전하게 1회 fallback 재시도
+            if resp.status_code in (400, 403) and "origin" in resp.text.lower():
+                fallback_origin = "http://localhost:8000"
+                if headers.get("Origin") != fallback_origin:
+                    logger.info(f"Neon Auth change-password Invalid origin 감지 ({headers.get('Origin')}) -> fallback origin({fallback_origin})으로 재시도")
+                    headers["Origin"] = fallback_origin
+                    resp = await client.post(url, json=req_body, headers=headers)
+    except httpx.RequestError as exc:
+        logger.error(f"Neon Auth change-password 통신 오류: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="인증 서버와 통신할 수 없습니다.",
+        )
+
+    if resp.status_code != 200:
+        # 민감정보(비밀번호 등)가 로그에 남지 않도록 상태 코드와 에러 코드만 안전하게 로깅
+        try:
+            err_data = resp.json()
+            err_code = str(err_data.get("code") or "")
+            err_msg = str(err_data.get("message") or "")
+            if not err_msg and isinstance(err_data.get("error"), str):
+                err_msg = err_data["error"]
+            elif isinstance(err_data.get("error"), dict):
+                err_code = err_code or str(err_data["error"].get("code") or "")
+                err_msg = err_msg or str(err_data["error"].get("message") or "")
+        except Exception:
+            err_code = ""
+            err_msg = ""
+
+        logger.warning(f"Neon Auth change-password failure: status={resp.status_code}, code={err_code}")
+
+        err_combined = f"{err_code} {err_msg}".lower()
+
+        if "invalid_password" in err_combined or "invalid password" in err_combined:
+            detail_msg = "현재 비밀번호가 올바르지 않습니다."
+            err_status = status.HTTP_400_BAD_REQUEST
+        elif "credential_account_not_found" in err_combined or "account not found" in err_combined:
+            detail_msg = "소셜 로그인 계정은 비밀번호 변경을 지원하지 않습니다."
+            err_status = status.HTTP_400_BAD_REQUEST
+        elif "password_too_short" in err_combined or "too short" in err_combined:
+            detail_msg = "새 비밀번호는 최소 8자 이상이어야 합니다."
+            err_status = status.HTTP_400_BAD_REQUEST
+        elif "password_too_long" in err_combined or "too long" in err_combined:
+            detail_msg = "새 비밀번호는 최대 128자 이하이어야 합니다."
+            err_status = status.HTTP_400_BAD_REQUEST
+        elif resp.status_code == 401 or "unauthorized" in err_combined or "session" in err_combined:
+            _delete_session_cookie(response)
+            detail_msg = "로그인 시간이 만료되었습니다. 다시 로그인해 주세요."
+            err_status = status.HTTP_401_UNAUTHORIZED
+        elif resp.status_code == 403 or "origin" in err_combined:
+            detail_msg = "인증 출처(Origin) 오류: 허용되지 않은 도메인입니다."
+            err_status = status.HTTP_403_FORBIDDEN
+        elif resp.status_code >= 500:
+            detail_msg = "인증 서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            err_status = status.HTTP_502_BAD_GATEWAY
+        else:
+            detail_msg = err_msg if err_msg else "비밀번호 변경 요청을 처리할 수 없습니다."
+            err_status = status.HTTP_400_BAD_REQUEST
+
+        raise HTTPException(status_code=err_status, detail=detail_msg)
+
+    # 성공 시: 만약 새 세션 토큰이 발급되었으면 bm_session 쿠키 갱신
+    try:
+        data = resp.json()
+        new_token = (
+            resp.cookies.get("__Secure-neon-auth.session_token")
+            or resp.cookies.get("better-auth.session_token")
+            or (data.get("token") if isinstance(data, dict) else None)
+        )
+        if new_token:
+            session_info = data.get("session") or {}
+            max_age = _calculate_max_age(session_info.get("expiresAt") or session_info.get("expires_at"))
+            _set_session_cookie(response, new_token, max_age)
+    except Exception as exc:
+        logger.debug(f"Session cookie update skip: {exc}")
+
+    return ChangePasswordResponse(message="비밀번호가 변경되었습니다.")

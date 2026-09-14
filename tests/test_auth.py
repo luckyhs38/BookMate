@@ -399,3 +399,99 @@ def test_csrf_origin_mismatch(client):
     assert response.status_code == 403
     assert "비정상적인 요청 출처" in response.json()["detail"]
 
+
+# ===========================================================================
+# 5. POST /api/auth/change-password 엔드포인트 테스트 (Mock 기반)
+# ===========================================================================
+
+def test_change_password_success(client, mock_current_user, monkeypatch):
+    """BFF 비밀번호 변경 성공 -> 200 및 안내 메시지 반환"""
+    import httpx
+    from app.config import settings
+    monkeypatch.setattr(settings, "NEON_AUTH_BASE_URL", "https://mock-auth.neon.tech")
+
+    mock_neon_resp = httpx.Response(
+        status_code=200,
+        json={"token": None, "user": {"id": "mock-user-id", "email": "tester@example.com"}},
+        request=httpx.Request("POST", "https://mock-auth.neon.tech/change-password"),
+    )
+
+    async def mock_post(self, url, **kwargs):
+        return mock_neon_resp
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+
+    client.cookies.set("bm_session", "valid-session-token")
+    response = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "oldpassword123", "new_password": "newpassword123"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "message" in data
+    assert "비밀번호가 변경되었습니다" in data["message"]
+
+
+def test_change_password_invalid_current_password(client, mock_current_user, monkeypatch):
+    """BFF 비밀번호 변경 실패: 현재 비밀번호 불일치 -> 400 Bad Request"""
+    import httpx
+    from app.config import settings
+    monkeypatch.setattr(settings, "NEON_AUTH_BASE_URL", "https://mock-auth.neon.tech")
+
+    mock_neon_resp = httpx.Response(
+        status_code=400,
+        json={"code": "INVALID_PASSWORD", "message": "Invalid password"},
+        request=httpx.Request("POST", "https://mock-auth.neon.tech/change-password"),
+    )
+
+    async def mock_post(self, url, **kwargs):
+        return mock_neon_resp
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+
+    client.cookies.set("bm_session", "valid-session-token")
+    response = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "wrongpassword123", "new_password": "newpassword123"},
+    )
+
+    assert response.status_code == 400
+    assert "현재 비밀번호가 올바르지 않습니다" in response.json()["detail"]
+
+
+def test_change_password_social_account(client, mock_current_user, monkeypatch):
+    """BFF 비밀번호 변경 실패: 소셜 로그인 계정 -> 400 Bad Request 및 안내 메시지"""
+    import httpx
+    from app.config import settings
+    monkeypatch.setattr(settings, "NEON_AUTH_BASE_URL", "https://mock-auth.neon.tech")
+
+    mock_neon_resp = httpx.Response(
+        status_code=400,
+        json={"code": "CREDENTIAL_ACCOUNT_NOT_FOUND", "message": "Credential account not found"},
+        request=httpx.Request("POST", "https://mock-auth.neon.tech/change-password"),
+    )
+
+    async def mock_post(self, url, **kwargs):
+        return mock_neon_resp
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+
+    client.cookies.set("bm_session", "valid-session-token")
+    response = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "anypassword123", "new_password": "newpassword123"},
+    )
+
+    assert response.status_code == 400
+    assert "소셜 로그인 계정은 비밀번호 변경을 지원하지 않습니다" in response.json()["detail"]
+
+
+def test_change_password_unauthorized(client):
+    """BFF 비밀번호 변경 실패: 비로그인 상태 -> 401 Unauthorized"""
+    response = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "oldpassword123", "new_password": "newpassword123"},
+    )
+    assert response.status_code == 401
+
