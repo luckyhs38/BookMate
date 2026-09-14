@@ -1928,9 +1928,11 @@ document.addEventListener("DOMContentLoaded", () => {
       textarea.placeholder = "내용을 자유롭게 다듬어 주세요.";
       textarea.style.display = isChecked ? "block" : "none";
 
-      // textarea 클릭 및 마우스다운 시 부모 label에 의한 체크박스 토글 방지
+      // textarea 클릭 및 터치 시 부모 label에 의한 체크박스 토글 방지 (모바일 환경 필수)
       textarea.addEventListener("click", (e) => e.stopPropagation());
       textarea.addEventListener("mousedown", (e) => e.stopPropagation());
+      textarea.addEventListener("touchstart", (e) => e.stopPropagation());
+      textarea.addEventListener("touchend", (e) => e.stopPropagation());
 
       textarea.addEventListener("input", (e) => {
         writeEssayState.editedAnswers.set(ans.id, e.target.value);
