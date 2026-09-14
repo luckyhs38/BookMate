@@ -3736,7 +3736,15 @@ body {
 }
 
 .essay-answer-check-card {
-  border-color: var(--border-medium);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .essay-answer-check-card.checked {
@@ -3772,6 +3780,17 @@ body {
   line-height: 1.65;
   color: var(--text-secondary);
   white-space: pre-wrap;
+}
+
+.essay-answer-edit-textarea {
+  width: 100%;
+  min-height: 90px;
+  margin-top: 4px;
+  font-family: var(--font-kr-serif);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  resize: vertical;
+  cursor: text;
 }
 
 .essay-no-answers-card {
