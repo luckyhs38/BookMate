@@ -28,7 +28,8 @@
             LOGIN →
           </button>
           <div id="header-user-group" class="header-user-group" style="display: none;">
-            <button type="button" id="header-user-name" class="header-user-name header-user-name-btn" aria-label="마이페이지로 이동"></button>
+            <button type="button" id="header-user-name" class="header-user-name header-user-name-btn"
+              aria-label="마이페이지로 이동"></button>
             <button type="button" class="header-auth-btn" id="header-logout-btn">
               LOGOUT →
             </button>
@@ -81,11 +82,11 @@
             </button>
 
             <!-- 02: SEARCH BOOKS 공간 마커 -->
-            <button type="button" class="world-spot spot-search" id="marker-search" aria-label="02 새로운 책 찾기">
+            <button type="button" class="world-spot spot-search" id="marker-search" aria-label="02 북클럽 만들기">
               <div class="marker-circle">02</div>
               <div class="marker-card">
                 <div class="marker-card-top">
-                  <span class="marker-card-title">새로운 책 찾기</span>
+                  <span class="marker-card-title">북클럽 만들기</span>
                   <span class="marker-card-arrow">→</span>
                 </div>
                 <p class="marker-card-sub">찾고 있는 책을 검색해보세요. <span class="marker-card-arrow-inline">→</span></p>
@@ -104,7 +105,20 @@
               </div>
             </button>
 
+            <!-- 04: BOOKSHELF 공간 마커 -->
+            <button type="button" class="world-spot spot-bookshelf" id="marker-bookshelf" aria-label="04 나의 책장">
+              <div class="marker-circle">04</div>
+              <div class="marker-card">
+                <div class="marker-card-top">
+                  <span class="marker-card-title">나의 책장</span>
+                  <span class="marker-card-arrow">→</span>
+                </div>
+                <p class="marker-card-sub">읽은 책과 짧은 감상을 기록해보세요. <span class="marker-card-arrow-inline">→</span></p>
+              </div>
+            </button>
+
             <!-- OPEN BOOK CLUBS: Hero 바로 아래 얇고 작은 Horizontal Book Strip -->
+
             <section class="open-clubs-strip" style="display: none;" id="open-clubs-section" aria-label="열린 북클럽 목록">
               <div class="strip-header">
                 <span class="strip-title">OPEN BOOK CLUBS</span>
@@ -584,7 +598,8 @@
             <div class="answers-action-bar">
               <div class="answers-action-left">
                 <span id="write-essay-answers-count-label" class="answers-count-label"></span>
-                <button type="button" id="write-essay-select-all-btn" class="essay-select-all-btn" style="display: none;">
+                <button type="button" id="write-essay-select-all-btn" class="essay-select-all-btn"
+                  style="display: none;">
                   전체 선택
                 </button>
               </div>
@@ -679,8 +694,8 @@
 
             <!-- 결과 편집 에디터 -->
             <div class="form-group" style="margin-top: 16px;">
-              <textarea id="write-essay-result-editor" class="form-textarea-editorial essay-result-textarea"
-                rows="14" aria-label="완성된 독후감 본문"></textarea>
+              <textarea id="write-essay-result-editor" class="form-textarea-editorial essay-result-textarea" rows="14"
+                aria-label="완성된 독후감 본문"></textarea>
             </div>
 
             <!-- 액션 버튼 그룹 -->
@@ -735,11 +750,19 @@
                 <span id="my-page-user-email" class="profile-email"></span>
               </div>
             </div>
-            <button type="button" id="my-page-edit-profile-btn" class="profile-edit-btn" aria-haspopup="dialog" aria-controls="change-password-modal">
-              내 정보 수정
-            </button>
+            <div class="my-page-profile-actions">
+              <button type="button" id="my-page-goto-bookshelf-btn" class="profile-bookshelf-btn"
+                aria-label="나의 책장으로 이동">
+                나의 책장 바로가기 →
+              </button>
+              <button type="button" id="my-page-edit-profile-btn" class="profile-edit-btn" aria-haspopup="dialog"
+                aria-controls="change-password-modal">
+                내 정보 수정
+              </button>
+            </div>
           </div>
         </header>
+
 
         <!-- ========================================================= -->
         <!-- 01 내가 참여한 책                                          -->
@@ -762,7 +785,8 @@
           <!-- 조회 에러 상태 -->
           <div id="my-page-books-error" class="essay-error-card" style="display: none;">
             <p id="my-page-books-error-msg">책 목록을 불러오지 못했습니다.</p>
-            <button type="button" id="my-page-books-retry-btn" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
+            <button type="button" id="my-page-books-retry-btn" class="btn btn-secondary"
+              style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
               다시 시도 ↻
             </button>
           </div>
@@ -771,7 +795,8 @@
           <div id="my-page-books-empty" class="essay-empty-notice" style="display: none;">
             <p>아직 기록한 생각이 없어요.</p>
             <p class="sub-text">북클럽에서 책에 대한 생각을 남겨보세요.</p>
-            <button type="button" id="my-page-search-book-btn" class="btn btn-primary" style="margin-top: 14px; font-size: 0.85rem;">
+            <button type="button" id="my-page-search-book-btn" class="btn btn-primary"
+              style="margin-top: 14px; font-size: 0.85rem;">
               책 찾기 →
             </button>
           </div>
@@ -822,7 +847,8 @@
           <!-- 생각 목록 에러 상태 -->
           <div id="my-page-answers-error" class="essay-error-card" style="display: none;">
             <p id="my-page-answers-error-msg">생각 목록을 불러오지 못했습니다.</p>
-            <button type="button" id="my-page-answers-retry-btn" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
+            <button type="button" id="my-page-answers-retry-btn" class="btn btn-secondary"
+              style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
               다시 시도 ↻
             </button>
           </div>
@@ -835,8 +861,74 @@
     </section>
 
     <!-- ============================================================= -->
+    <!-- VIEW 9: 나의 책장 (MY BOOKSHELF)                              -->
+    <!-- ============================================================= -->
+    <section id="view-bookshelf" class="view-section">
+      <div class="bookshelf-container">
+
+        <!-- 상단 네비게이션: 메인으로 버튼 -->
+        <div class="bookshelf-nav">
+          <button type="button" id="bookshelf-back-btn" class="btn btn-secondary bookshelf-back-btn">
+            ← 메인으로
+          </button>
+        </div>
+
+        <!-- 화면 상단 에디토리얼 타이포그래피 & 문구 -->
+        <header class="bookshelf-header">
+          <div class="bookshelf-header-main">
+            <div class="bookshelf-tag">MY BOOKSHELF</div>
+            <h1 class="bookshelf-title">읽고 기록한 책,<br>나만의 책장.</h1>
+            <p class="bookshelf-desc">
+              읽은 책과 짧은 감상을 기록해보세요.
+            </p>
+          </div>
+          <div class="bookshelf-header-action">
+            <button type="button" id="bookshelf-add-btn" class="btn btn-primary bookshelf-record-btn">
+              + 책 기록하기
+            </button>
+          </div>
+        </header>
+
+        <!-- 책장 컨텐츠 영역 -->
+        <div class="bookshelf-content">
+
+          <!-- 로딩 상태 -->
+          <div id="bookshelf-loading" class="essay-loading-state" style="display: none;">
+            <div class="clubs-loading-line"></div>
+            <p class="essay-loading-text">책장 목록을 불러오고 있습니다…</p>
+          </div>
+
+          <!-- 에러 상태 -->
+          <div id="bookshelf-error" class="essay-error-card" style="display: none;">
+            <p id="bookshelf-error-msg">책장 목록을 불러오지 못했습니다.</p>
+            <button type="button" id="bookshelf-retry-btn" class="btn btn-secondary"
+              style="font-size: 0.8rem; padding: 6px 14px; margin-top: 8px;">
+              다시 시도 ↻
+            </button>
+          </div>
+
+          <!-- 빈 상태 (기록 없음) -->
+          <div id="bookshelf-empty" class="essay-empty-notice" style="display: none;">
+            <p>아직 책장에 기록된 책이 없어요.</p>
+            <p class="sub-text">읽은 책과 마음에 남은 감상을 자유롭게 기록해 보세요.</p>
+            <!-- <button type="button" id="bookshelf-empty-add-btn" class="btn btn-primary"
+              style="margin-top: 14px; font-size: 0.85rem;">
+              책 기록하기 →
+            </button> -->
+          </div>
+
+          <!-- 실제 독서 기록 그리드 -->
+          <div id="bookshelf-grid" class="bookshelf-grid" style="display: none;"></div>
+
+        </div><!-- /.bookshelf-content -->
+
+      </div><!-- /.bookshelf-container -->
+    </section>
+
+    <!-- ============================================================= -->
     <!-- Footer — Minimal                                              -->
     <!-- ============================================================= -->
+
     <footer class="app-footer">
       <div class="footer-left">
         <span class="footer-brand">BOOKMATE</span>
@@ -1025,7 +1117,8 @@
 
       <h2 id="change-password-modal-title" class="auth-modal-title" tabindex="-1">비밀번호 변경</h2>
 
-      <div id="my-page-change-password-alert" class="auth-error-msg" style="display: none;" role="alert" aria-live="polite"></div>
+      <div id="my-page-change-password-alert" class="auth-error-msg" style="display: none;" role="alert"
+        aria-live="polite"></div>
 
       <form id="my-page-change-password-form" class="auth-form" novalidate autocomplete="off">
         <!-- 현재 비밀번호 -->
@@ -1033,25 +1126,29 @@
           <label class="form-label" for="my-page-current-password">CURRENT PASSWORD</label>
           <div class="password-input-wrapper">
             <input type="password" id="my-page-current-password" class="form-input-editorial"
-              autocomplete="current-password" placeholder="현재 비밀번호 입력" required aria-describedby="my-page-current-pwd-err">
-            <button type="button" class="pwd-toggle-btn" data-target="my-page-current-password" aria-label="현재 비밀번호 표시 전환">
+              autocomplete="current-password" placeholder="현재 비밀번호 입력" required
+              aria-describedby="my-page-current-pwd-err">
+            <button type="button" class="pwd-toggle-btn" data-target="my-page-current-password"
+              aria-label="현재 비밀번호 표시 전환">
               <span class="pwd-toggle-text">표시</span>
             </button>
           </div>
-          <span id="my-page-current-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+          <span id="my-page-current-pwd-err" class="form-field-error" style="display: none;" role="alert"
+            aria-live="polite"></span>
         </div>
 
         <!-- 새 비밀번호 -->
         <div class="form-group">
           <label class="form-label" for="my-page-new-password">NEW PASSWORD</label>
           <div class="password-input-wrapper">
-            <input type="password" id="my-page-new-password" class="form-input-editorial"
-              autocomplete="new-password" placeholder="새 비밀번호 (8자 이상)" required aria-describedby="my-page-new-pwd-err">
+            <input type="password" id="my-page-new-password" class="form-input-editorial" autocomplete="new-password"
+              placeholder="새 비밀번호 (8자 이상)" required aria-describedby="my-page-new-pwd-err">
             <button type="button" class="pwd-toggle-btn" data-target="my-page-new-password" aria-label="새 비밀번호 표시 전환">
               <span class="pwd-toggle-text">표시</span>
             </button>
           </div>
-          <span id="my-page-new-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+          <span id="my-page-new-pwd-err" class="form-field-error" style="display: none;" role="alert"
+            aria-live="polite"></span>
         </div>
 
         <!-- 새 비밀번호 확인 -->
@@ -1059,12 +1156,15 @@
           <label class="form-label" for="my-page-confirm-password">CONFIRM NEW PASSWORD</label>
           <div class="password-input-wrapper">
             <input type="password" id="my-page-confirm-password" class="form-input-editorial"
-              autocomplete="new-password" placeholder="새 비밀번호 다시 입력" required aria-describedby="my-page-confirm-pwd-err">
-            <button type="button" class="pwd-toggle-btn" data-target="my-page-confirm-password" aria-label="새 비밀번호 확인 표시 전환">
+              autocomplete="new-password" placeholder="새 비밀번호 다시 입력" required
+              aria-describedby="my-page-confirm-pwd-err">
+            <button type="button" class="pwd-toggle-btn" data-target="my-page-confirm-password"
+              aria-label="새 비밀번호 확인 표시 전환">
               <span class="pwd-toggle-text">표시</span>
             </button>
           </div>
-          <span id="my-page-confirm-pwd-err" class="form-field-error" style="display: none;" role="alert" aria-live="polite"></span>
+          <span id="my-page-confirm-pwd-err" class="form-field-error" style="display: none;" role="alert"
+            aria-live="polite"></span>
         </div>
 
         <!-- 하단: 취소 / 비밀번호 변경 버튼 -->
@@ -1079,6 +1179,118 @@
       </form>
     </div>
   </div>
+
+  <!-- ============================================================= -->
+  <!-- Bookshelf Modal (책 기록하기 / 수정)                          -->
+  <!-- ============================================================= -->
+  <div id="bookshelf-modal" class="auth-modal-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="bookshelf-modal-title" style="display: none;">
+    <div class="auth-modal-card bookshelf-modal-card">
+      <button type="button" class="auth-modal-close-btn" id="bookshelf-modal-close-btn" aria-label="닫기">
+        ✕
+      </button>
+
+      <div class="bookshelf-modal-header">
+        <h2 id="bookshelf-modal-title" class="auth-modal-title">책 기록하기</h2>
+        <p id="bookshelf-modal-sub" class="bookshelf-modal-sub">읽은 책과 마음에 남은 생각을 기록해 보세요.</p>
+      </div>
+
+      <!-- 이미 등록된 책일 때 안내 Alert -->
+      <div id="record-duplicate-alert" class="bookshelf-duplicate-alert" style="display: none;" role="alert">
+        <div class="duplicate-alert-content">
+          <p class="duplicate-alert-msg">이미 내 책장에 기록된 책입니다.</p>
+          <p class="duplicate-alert-desc">기존에 작성한 기록을 수정하시겠습니까?</p>
+        </div>
+        <button type="button" id="record-switch-to-edit-btn" class="btn btn-burgundy duplicate-alert-btn">
+          기존 기록 수정하기 →
+        </button>
+      </div>
+
+      <!-- 1단계: 도서 검색 및 선택 -->
+      <div id="record-book-select-section" class="record-book-select-section">
+        <div class="form-group" style="margin-bottom: var(--space-md);">
+          <label class="form-label" for="record-book-search-input">SEARCH BOOK / 책 찾기</label>
+          <div class="search-input-inline-wrap">
+            <input type="text" id="record-book-search-input" class="form-input-editorial search-input-field"
+              placeholder="책 제목을 검색하세요" autocomplete="off">
+            <button type="button" id="record-book-search-btn" class="search-inline-btn">
+              SEARCH →
+            </button>
+          </div>
+        </div>
+
+        <!-- 검색 로딩 -->
+        <div id="record-search-loading" class="essay-loading-state" style="display: none; padding: 16px 0;">
+          <div class="clubs-loading-line"></div>
+          <p class="essay-loading-text" style="font-size: 0.78rem;">도서를 검색하고 있습니다…</p>
+        </div>
+
+        <!-- 검색 결과 목록 -->
+        <div id="record-search-results" class="record-search-results" style="display: none;"></div>
+
+        <!-- 선택된 책 정보 프리뷰 -->
+        <div id="record-selected-book-card" class="record-selected-book-card" style="display: none;">
+          <div id="record-selected-cover-wrap" class="record-selected-cover-wrap"></div>
+          <div class="record-selected-info">
+            <h4 id="record-selected-title" class="record-selected-title"></h4>
+            <p id="record-selected-meta" class="record-selected-meta"></p>
+            <button type="button" id="record-reselect-book-btn" class="record-reselect-book-btn">
+              다른 책 선택 ↺
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2단계: 독서 기록 입력 폼 (선택된 책이 있을 때 활성화) -->
+      <form id="record-detail-form" class="record-detail-form" style="display: none;">
+        <!-- 읽은 날짜 -->
+        <div class="form-group" style="margin-top: var(--space-md);">
+          <label class="form-label" for="record-read-date">READ DATE / 읽은 날짜 <span class="required">*</span></label>
+          <input type="date" id="record-read-date" class="form-input-editorial" required>
+        </div>
+
+        <!-- 별점 (1~5점 선택) -->
+        <div class="form-group">
+          <label class="form-label">RATING / 별점 <span class="optional">(선택)</span></label>
+          <div class="star-rating-container" id="record-star-container">
+            <div class="star-rating-stars" id="record-star-buttons" role="radiogroup" aria-label="별점 선택">
+              <button type="button" class="star-btn" data-rating="1" aria-label="1점">★</button>
+              <button type="button" class="star-btn" data-rating="2" aria-label="2점">★</button>
+              <button type="button" class="star-btn" data-rating="3" aria-label="3점">★</button>
+              <button type="button" class="star-btn" data-rating="4" aria-label="4점">★</button>
+              <button type="button" class="star-btn" data-rating="5" aria-label="5점">★</button>
+            </div>
+            <span id="record-rating-text" class="star-rating-text">선택 안 함</span>
+            <button type="button" id="record-rating-clear-btn" class="star-clear-btn"
+              style="display: none;">지우기</button>
+            <input type="hidden" id="record-rating-value" value="">
+          </div>
+        </div>
+
+        <!-- 한줄 감상 (최대 200자) -->
+        <div class="form-group" style="margin-bottom: var(--space-md);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <label class="form-label" for="record-review-input">REVIEW / 한줄 감상 <span
+                class="optional">(선택)</span></label>
+            <span id="record-review-count" class="char-count-text">0 / 200</span>
+          </div>
+          <textarea id="record-review-input" class="form-textarea-editorial" maxlength="200" rows="3"
+            placeholder="책을 읽고 떠오른 생각이나 짧은 감상을 남겨보세요. (최대 200자)"></textarea>
+        </div>
+
+        <!-- 모달 버튼 액션 -->
+        <div class="bookshelf-modal-actions" style="display: flex; gap: 10px; margin-top: var(--space-lg);">
+          <button type="button" id="bookshelf-modal-cancel-btn" class="btn btn-secondary" style="flex: 1;">
+            취소
+          </button>
+          <button type="submit" id="bookshelf-modal-submit-btn" class="btn btn-primary" style="flex: 2;">
+            기록 저장하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <!-- Client JavaScript Modules -->
   <script src="/static/js/state.js?v=20260911_4"></script>

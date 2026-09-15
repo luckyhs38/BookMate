@@ -32,8 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
     reviewStyle: document.getElementById("view-review-style"),
     reviewResult: document.getElementById("view-review-result"),
     writeEssay: document.getElementById("view-write-essay"),
-    myPage: document.getElementById("view-my-page")
+    myPage: document.getElementById("view-my-page"),
+    bookshelf: document.getElementById("view-bookshelf")
   };
+
 
   // 공개 답변 메모리 캐시 (Map: questionId → answers[])
   // Accordion을 진영 닫았다 다시 열어도 API 재호출 방지
@@ -81,6 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (typeof closeBookshelfRecordModal === "function" && document.getElementById("bookshelf-modal")?.style.display !== "none") {
+      closeBookshelfRecordModal(true);
+      return;
+    }
+
     let targetView = e.state?.view;
     if (!targetView) {
       const hash = window.location.hash.replace("#", "");
@@ -99,9 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
       targetView = "main";
     } else if (targetView === "reviewStyle" && (!BookMateState.discussions || BookMateState.discussions.length === 0)) {
       targetView = "club";
-    } else if (targetView === "myPage" && !BookMateState.currentUser) {
+    } else if ((targetView === "myPage" || targetView === "bookshelf") && !BookMateState.currentUser) {
       targetView = "main";
     }
+
 
     // 뒤로가기 동작이므로 새로운 히스토리를 밀어넣지 않음 (pushHistory = false)
     switchView(targetView, false);
@@ -308,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-  // 02 마커: 새로운 책 찾기 (SEARCH BOOKS 공간)
+  // 02 마커: 북클럽 만들기 (SEARCH BOOKS 공간)
   const markerSearch = document.getElementById("marker-search");
   if (markerSearch) {
     markerSearch.addEventListener("click", () => {
@@ -343,6 +351,15 @@ document.addEventListener("DOMContentLoaded", () => {
       openWriteEssayFlow();
     });
   }
+
+  // 04 마커: 나의 책장 (BOOKSHELF 공간)
+  const markerBookshelf = document.getElementById("marker-bookshelf");
+  if (markerBookshelf) {
+    markerBookshelf.addEventListener("click", () => {
+      openBookshelfFlow();
+    });
+  }
+
 
   // SEARCH BOOKS → 토글
   if (mainSearchBooksBtn && mainSearchPanel) {
@@ -3176,8 +3193,725 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================================================================
+  // VIEW 9: 나의 책장 (MY BOOKSHELF) 컨트롤러
+  // =========================================================================
+
+  // 책장 상태 관리 객체
+  const bookshelfState = {
+    records: [],
+    currentEditingRecord: null,
+    selectedBookForRecord: null,
+    currentRating: null
+  };
+
+  // 책장 DOM 요소
+  const bookshelfBackBtn = document.getElementById("bookshelf-back-btn");
+  const bookshelfAddBtn = document.getElementById("bookshelf-add-btn");
+  const bookshelfEmptyAddBtn = document.getElementById("bookshelf-empty-add-btn");
+  const bookshelfRetryBtn = document.getElementById("bookshelf-retry-btn");
+  const bookshelfLoading = document.getElementById("bookshelf-loading");
+  const bookshelfError = document.getElementById("bookshelf-error");
+  const bookshelfErrorMsg = document.getElementById("bookshelf-error-msg");
+  const bookshelfEmpty = document.getElementById("bookshelf-empty");
+  const bookshelfGrid = document.getElementById("bookshelf-grid");
+  const myPageGotoBookshelfBtn = document.getElementById("my-page-goto-bookshelf-btn");
+
+  // 책장 모달 DOM 요소
+  const bookshelfModal = document.getElementById("bookshelf-modal");
+  const bookshelfModalCloseBtn = document.getElementById("bookshelf-modal-close-btn");
+  const bookshelfModalCancelBtn = document.getElementById("bookshelf-modal-cancel-btn");
+  const bookshelfModalTitle = document.getElementById("bookshelf-modal-title");
+  const bookshelfModalSub = document.getElementById("bookshelf-modal-sub");
+  const recordDuplicateAlert = document.getElementById("record-duplicate-alert");
+  const recordSwitchToEditBtn = document.getElementById("record-switch-to-edit-btn");
+
+  const recordBookSelectSection = document.getElementById("record-book-select-section");
+  const recordBookSearchInput = document.getElementById("record-book-search-input");
+  const recordBookSearchBtn = document.getElementById("record-book-search-btn");
+  const recordSearchLoading = document.getElementById("record-search-loading");
+  const recordSearchResults = document.getElementById("record-search-results");
+  const recordSelectedBookCard = document.getElementById("record-selected-book-card");
+  const recordSelectedCoverWrap = document.getElementById("record-selected-cover-wrap");
+  const recordSelectedTitle = document.getElementById("record-selected-title");
+  const recordSelectedMeta = document.getElementById("record-selected-meta");
+  const recordReselectBookBtn = document.getElementById("record-reselect-book-btn");
+
+  const recordDetailForm = document.getElementById("record-detail-form");
+  const recordReadDate = document.getElementById("record-read-date");
+  const recordStarButtons = document.getElementById("record-star-buttons");
+  const recordRatingText = document.getElementById("record-rating-text");
+  const recordRatingClearBtn = document.getElementById("record-rating-clear-btn");
+  const recordRatingValue = document.getElementById("record-rating-value");
+  const recordReviewInput = document.getElementById("record-review-input");
+  const recordReviewCount = document.getElementById("record-review-count");
+  const bookshelfModalSubmitBtn = document.getElementById("bookshelf-modal-submit-btn");
+
+  // 오늘 날짜 YYYY-MM-DD 구하기 유틸
+  function getTodayDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  // 책장 진입 플로우
+  function openBookshelfFlow() {
+    if (!BookMateState.currentUser) {
+      showToast("나의 책장을 이용하려면 로그인하세요.");
+      openAuthModal("login");
+      return;
+    }
+
+    switchView("bookshelf");
+    loadBookshelfRecords();
+  }
+
+  // 책장 독서 기록 로드
+  async function loadBookshelfRecords() {
+    if (!bookshelfLoading || !bookshelfGrid) return;
+
+    bookshelfLoading.style.display = "block";
+    bookshelfGrid.style.display = "none";
+    if (bookshelfError) bookshelfError.style.display = "none";
+    if (bookshelfEmpty) bookshelfEmpty.style.display = "none";
+    bookshelfGrid.innerHTML = "";
+
+    try {
+      const records = await BookMateAPI.getBookshelfRecords();
+      bookshelfState.records = records || [];
+
+      bookshelfLoading.style.display = "none";
+
+      if (!records || records.length === 0) {
+        if (bookshelfEmpty) bookshelfEmpty.style.display = "block";
+        return;
+      }
+
+      renderBookshelfCards(records);
+      bookshelfGrid.style.display = "grid";
+    } catch (err) {
+      console.error("[Bookshelf] load error:", err);
+      bookshelfLoading.style.display = "none";
+      if (bookshelfError) {
+        bookshelfError.style.display = "block";
+        if (bookshelfErrorMsg) bookshelfErrorMsg.textContent = err.message || "책장 목록을 불러오지 못했습니다.";
+      }
+    }
+  }
+
+  // 책장 카드 렌더링
+  function renderBookshelfCards(records) {
+    bookshelfGrid.innerHTML = "";
+    records.forEach(record => {
+      const card = createBookshelfCard(record);
+      bookshelfGrid.appendChild(card);
+    });
+  }
+
+  // 책장 개별 카드 DOM 생성
+  function createBookshelfCard(record) {
+    const card = document.createElement("article");
+    card.className = "bookshelf-card";
+
+    // 1. 카드 상단: 표지 + 도서 메타
+    const header = document.createElement("div");
+    header.className = "bookshelf-card-header";
+
+    const coverWrap = document.createElement("div");
+    coverWrap.className = "bookshelf-card-cover-wrap";
+    if (record.thumbnail_url) {
+      const img = document.createElement("img");
+      img.src = record.thumbnail_url;
+      img.alt = "";
+      img.className = "bookshelf-card-cover-img";
+      img.loading = "lazy";
+      img.onerror = () => {
+        coverWrap.innerHTML = "";
+        coverWrap.appendChild(createCoverPlaceholder(record.title));
+      };
+      coverWrap.appendChild(img);
+    } else {
+      coverWrap.appendChild(createCoverPlaceholder(record.title));
+    }
+
+    const info = document.createElement("div");
+    info.className = "bookshelf-card-book-info";
+
+    const dateBadge = document.createElement("span");
+    dateBadge.className = "bookshelf-card-read-date";
+    dateBadge.textContent = record.read_date ? `${record.read_date} 읽음` : "기록됨";
+
+    const title = document.createElement("h3");
+    title.className = "bookshelf-card-title";
+    title.textContent = record.title;
+
+    const author = document.createElement("p");
+    author.className = "bookshelf-card-author";
+    author.textContent = `${record.author}${record.publisher ? ` · ${record.publisher}` : ""}`;
+
+    const ratingEl = document.createElement("div");
+    if (record.rating && record.rating >= 1 && record.rating <= 5) {
+      ratingEl.className = "bookshelf-card-rating";
+      ratingEl.setAttribute("aria-label", `별점 ${record.rating}점`);
+      ratingEl.textContent = "★".repeat(record.rating) + "☆".repeat(5 - record.rating);
+    } else {
+      ratingEl.className = "bookshelf-card-rating-empty";
+      ratingEl.textContent = "별점 없음";
+    }
+
+    info.appendChild(dateBadge);
+    info.appendChild(title);
+    info.appendChild(author);
+    info.appendChild(ratingEl);
+
+    header.appendChild(coverWrap);
+    header.appendChild(info);
+
+    // 2. 한줄 감상 박스
+    const reviewBox = document.createElement("div");
+    reviewBox.className = "bookshelf-card-review-box";
+    if (record.review && record.review.trim()) {
+      const reviewText = document.createElement("p");
+      reviewText.className = "bookshelf-card-review-text";
+      reviewText.textContent = record.review;
+      reviewBox.appendChild(reviewText);
+    } else {
+      const noReview = document.createElement("p");
+      noReview.className = "bookshelf-card-no-review";
+      noReview.textContent = "기록된 한줄 감상이 없습니다.";
+      reviewBox.appendChild(noReview);
+    }
+
+    // 3. 카드 하단 액션 버튼
+    const actions = document.createElement("div");
+    actions.className = "bookshelf-card-actions";
+
+    // 북클럽 참여하기 버튼 (명시적으로 눌렀을 때만 기존 북클럽 진입 플로우 실행)
+    const clubBtn = document.createElement("button");
+    clubBtn.type = "button";
+    clubBtn.className = "bookshelf-card-club-btn";
+    clubBtn.textContent = "북클럽 참여하기 →";
+    clubBtn.addEventListener("click", () => {
+      executeEnterBook(
+        record.title,
+        record.author,
+        null,
+        record.isbn || null,
+        record.publisher || null,
+        record.thumbnail_url || null
+      );
+    });
+
+    const subActions = document.createElement("div");
+    subActions.className = "bookshelf-card-sub-actions";
+
+    // 수정 버튼
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "bookshelf-card-edit-btn";
+    editBtn.textContent = "수정";
+    editBtn.addEventListener("click", () => {
+      openBookshelfRecordModal(record);
+    });
+
+    // 삭제 버튼 (삭제 전 확인 대화상자)
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "bookshelf-card-delete-btn";
+    delBtn.textContent = "삭제";
+    delBtn.addEventListener("click", async () => {
+      if (!confirm(`'${record.title}' 독서 기록을 삭제하시겠습니까?`)) {
+        return;
+      }
+      try {
+        await BookMateAPI.deleteBookshelfRecord(record.id);
+        showToast("독서 기록이 삭제되었습니다.");
+        loadBookshelfRecords();
+      } catch (err) {
+        showToast(err.message || "독서 기록 삭제에 실패했습니다.");
+      }
+    });
+
+    subActions.appendChild(editBtn);
+    subActions.appendChild(delBtn);
+
+    actions.appendChild(clubBtn);
+    actions.appendChild(subActions);
+
+    card.appendChild(header);
+    card.appendChild(reviewBox);
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  // 별점 UI 갱신 함수
+  function setRatingValue(rating) {
+    bookshelfState.currentRating = rating ? Number(rating) : null;
+    if (recordRatingValue) {
+      recordRatingValue.value = bookshelfState.currentRating ? String(bookshelfState.currentRating) : "";
+    }
+
+    const starBtns = recordStarButtons ? recordStarButtons.querySelectorAll(".star-btn") : [];
+    starBtns.forEach((btn, idx) => {
+      const starNum = idx + 1;
+      if (bookshelfState.currentRating && starNum <= bookshelfState.currentRating) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+
+    if (recordRatingText) {
+      recordRatingText.textContent = bookshelfState.currentRating ? `${bookshelfState.currentRating}점` : "선택 안 함";
+    }
+    if (recordRatingClearBtn) {
+      recordRatingClearBtn.style.display = bookshelfState.currentRating ? "inline-block" : "none";
+    }
+  }
+
+  // 독서 기록 모달 열기 (신규 등록 or 기존 기록 수정)
+  function openBookshelfRecordModal(recordToEdit = null) {
+    if (!bookshelfModal) return;
+
+    // 모달 상태 초기화
+    if (recordDuplicateAlert) recordDuplicateAlert.style.display = "none";
+    if (recordSearchResults) {
+      recordSearchResults.style.display = "none";
+      recordSearchResults.innerHTML = "";
+    }
+    if (recordSearchLoading) recordSearchLoading.style.display = "none";
+
+    if (recordToEdit) {
+      // [수정 모드]
+      bookshelfState.currentEditingRecord = recordToEdit;
+      bookshelfState.selectedBookForRecord = {
+        id: recordToEdit.book_id,
+        title: recordToEdit.title,
+        author: recordToEdit.author,
+        isbn: recordToEdit.isbn,
+        publisher: recordToEdit.publisher,
+        thumbnail_url: recordToEdit.thumbnail_url
+      };
+
+      if (bookshelfModalTitle) bookshelfModalTitle.textContent = "독서 기록 수정";
+      if (bookshelfModalSub) bookshelfModalSub.textContent = "기록한 날짜, 별점, 감상을 수정할 수 있습니다.";
+      if (bookshelfModalSubmitBtn) bookshelfModalSubmitBtn.textContent = "기록 수정 완료";
+
+      // 책 검색 영역은 숨기고 선택된 책 카드로 고정
+      if (recordBookSearchInput) recordBookSearchInput.closest(".form-group").style.display = "none";
+      if (recordReselectBookBtn) recordReselectBookBtn.style.display = "none"; // 수정 시에는 책 변경 불가
+
+      showSelectedBookInModal(bookshelfState.selectedBookForRecord);
+
+      // 기존 값 채우기
+      if (recordReadDate) recordReadDate.value = recordToEdit.read_date || getTodayDateString();
+      setRatingValue(recordToEdit.rating || null);
+      if (recordReviewInput) {
+        recordReviewInput.value = recordToEdit.review || "";
+        updateCharCount(recordReviewInput.value.length);
+      }
+      if (recordDetailForm) recordDetailForm.style.display = "block";
+
+    } else {
+      // [신규 등록 모드]
+      bookshelfState.currentEditingRecord = null;
+      bookshelfState.selectedBookForRecord = null;
+
+      if (bookshelfModalTitle) bookshelfModalTitle.textContent = "책 기록하기";
+      if (bookshelfModalSub) bookshelfModalSub.textContent = "읽은 책과 마음에 남은 생각을 기록해 보세요.";
+      if (bookshelfModalSubmitBtn) bookshelfModalSubmitBtn.textContent = "기록 저장하기";
+
+      if (recordBookSearchInput) {
+        recordBookSearchInput.closest(".form-group").style.display = "block";
+        recordBookSearchInput.value = "";
+      }
+      if (recordSelectedBookCard) recordSelectedBookCard.style.display = "none";
+      if (recordReselectBookBtn) recordReselectBookBtn.style.display = "inline-block";
+
+      if (recordReadDate) recordReadDate.value = getTodayDateString();
+      setRatingValue(null);
+      if (recordReviewInput) {
+        recordReviewInput.value = "";
+        updateCharCount(0);
+      }
+      if (recordDetailForm) recordDetailForm.style.display = "none";
+    }
+
+    bookshelfModal.style.display = "flex";
+    if (!recordToEdit && recordBookSearchInput) {
+      setTimeout(() => recordBookSearchInput.focus(), 150);
+    }
+  }
+
+  // 모달 내 선택된 책 카드 표시
+  function showSelectedBookInModal(book) {
+    if (!recordSelectedBookCard) return;
+
+    if (recordSelectedTitle) recordSelectedTitle.textContent = book.title;
+    if (recordSelectedMeta) {
+      recordSelectedMeta.textContent = `${book.author}${book.publisher ? ` · ${book.publisher}` : ""}`;
+    }
+
+    if (recordSelectedCoverWrap) {
+      recordSelectedCoverWrap.innerHTML = "";
+      if (book.thumbnail_url) {
+        const img = document.createElement("img");
+        img.src = book.thumbnail_url;
+        img.alt = "";
+        img.onerror = () => {
+          recordSelectedCoverWrap.innerHTML = "";
+          recordSelectedCoverWrap.appendChild(createCoverPlaceholder(book.title));
+        };
+        recordSelectedCoverWrap.appendChild(img);
+      } else {
+        recordSelectedCoverWrap.appendChild(createCoverPlaceholder(book.title));
+      }
+    }
+
+    recordSelectedBookCard.style.display = "flex";
+  }
+
+  // 모달 닫기
+  function closeBookshelfRecordModal(keepHistory = false) {
+    if (!bookshelfModal) return;
+    bookshelfModal.style.display = "none";
+    bookshelfState.currentEditingRecord = null;
+    bookshelfState.selectedBookForRecord = null;
+    bookshelfState.currentRating = null;
+
+    if (recordBookSearchInput) recordBookSearchInput.value = "";
+    if (recordSearchResults) {
+      recordSearchResults.innerHTML = "";
+      recordSearchResults.style.display = "none";
+    }
+    if (recordDuplicateAlert) recordDuplicateAlert.style.display = "none";
+    if (recordDetailForm) recordDetailForm.style.display = "none";
+  }
+
+  // 글자수 카운터 업데이트
+  function updateCharCount(length) {
+    if (!recordReviewCount) return;
+    recordReviewCount.textContent = `${length} / 200`;
+    if (length >= 200) {
+      recordReviewCount.className = "char-count-text limit-full";
+    } else if (length >= 180) {
+      recordReviewCount.className = "char-count-text limit-near";
+    } else {
+      recordReviewCount.className = "char-count-text";
+    }
+  }
+
+  // 책장 상태 초기화 (로그아웃 / 계정 변경 시)
+  function resetBookshelfState() {
+    bookshelfState.records = [];
+    bookshelfState.currentEditingRecord = null;
+    bookshelfState.selectedBookForRecord = null;
+    bookshelfState.currentRating = null;
+    if (bookshelfGrid) bookshelfGrid.innerHTML = "";
+    if (bookshelfEmpty) bookshelfEmpty.style.display = "none";
+    if (bookshelfError) bookshelfError.style.display = "none";
+    closeBookshelfRecordModal(true);
+  }
+
+  // --- 이벤트 리스너 등록 ---
+
+  // 책장 뒤로가기 (메인으로)
+  if (bookshelfBackBtn) {
+    bookshelfBackBtn.addEventListener("click", () => {
+      switchView("main");
+    });
+  }
+
+  // + 책 기록하기 버튼
+  if (bookshelfAddBtn) {
+    bookshelfAddBtn.addEventListener("click", () => {
+      openBookshelfRecordModal(null);
+    });
+  }
+
+  // 빈 상태 책 기록하기 버튼
+  if (bookshelfEmptyAddBtn) {
+    bookshelfEmptyAddBtn.addEventListener("click", () => {
+      openBookshelfRecordModal(null);
+    });
+  }
+
+  // 책장 재시도 버튼
+  if (bookshelfRetryBtn) {
+    bookshelfRetryBtn.addEventListener("click", () => {
+      loadBookshelfRecords();
+    });
+  }
+
+  // 마이페이지 '나의 책장 바로가기' 버튼
+  if (myPageGotoBookshelfBtn) {
+    myPageGotoBookshelfBtn.addEventListener("click", () => {
+      openBookshelfFlow();
+    });
+  }
+
+  // 모달 닫기 / 취소 버튼
+  if (bookshelfModalCloseBtn) {
+    bookshelfModalCloseBtn.addEventListener("click", () => closeBookshelfRecordModal());
+  }
+  if (bookshelfModalCancelBtn) {
+    bookshelfModalCancelBtn.addEventListener("click", () => closeBookshelfRecordModal());
+  }
+  if (bookshelfModal) {
+    bookshelfModal.addEventListener("click", (e) => {
+      if (e.target === bookshelfModal) closeBookshelfRecordModal();
+    });
+  }
+
+  // 도서 검색 핸들러
+  async function handleBookSearchForRecord() {
+    const query = recordBookSearchInput ? recordBookSearchInput.value.trim() : "";
+    if (!query) {
+      showToast("검색할 책 제목을 입력해 주세요.");
+      if (recordBookSearchInput) recordBookSearchInput.focus();
+      return;
+    }
+
+    if (recordDuplicateAlert) recordDuplicateAlert.style.display = "none";
+    if (recordSearchResults) {
+      recordSearchResults.style.display = "none";
+      recordSearchResults.innerHTML = "";
+    }
+    if (recordSearchLoading) recordSearchLoading.style.display = "block";
+
+    try {
+      const results = await BookMateAPI.searchBooks(query);
+      if (recordSearchLoading) recordSearchLoading.style.display = "none";
+
+      if (!results || results.length === 0) {
+        if (recordSearchResults) {
+          recordSearchResults.style.display = "block";
+          recordSearchResults.innerHTML = `
+            <div style="padding: 14px; font-size: 0.82rem; color: var(--text-muted); text-align: center;">
+              검색 결과가 없습니다.
+            </div>
+          `;
+        }
+        return;
+      }
+
+      if (recordSearchResults) {
+        recordSearchResults.style.display = "block";
+        recordSearchResults.innerHTML = "";
+
+        results.forEach(item => {
+          const itemBtn = document.createElement("button");
+          itemBtn.type = "button";
+          itemBtn.className = "record-search-item";
+
+          if (item.thumbnail_url) {
+            const coverImg = document.createElement("img");
+            coverImg.src = item.thumbnail_url;
+            coverImg.alt = "";
+            coverImg.className = "record-search-cover";
+            coverImg.onerror = () => {
+              coverImg.replaceWith(createCoverPlaceholder(item.title));
+            };
+            itemBtn.appendChild(coverImg);
+          } else {
+            itemBtn.appendChild(createCoverPlaceholder(item.title));
+          }
+
+          const infoWrap = document.createElement("div");
+          infoWrap.className = "record-search-info";
+
+          const tEl = document.createElement("div");
+          tEl.className = "record-search-title";
+          tEl.textContent = item.title;
+
+          const mEl = document.createElement("div");
+          mEl.className = "record-search-meta";
+          mEl.textContent = `${item.author}${item.publisher ? ` · ${item.publisher}` : ""}`;
+
+          infoWrap.appendChild(tEl);
+          infoWrap.appendChild(mEl);
+          itemBtn.appendChild(infoWrap);
+
+          // 책 선택 시
+          itemBtn.addEventListener("click", () => {
+            selectBookForRecord(item);
+          });
+
+          recordSearchResults.appendChild(itemBtn);
+        });
+      }
+    } catch (err) {
+      console.error("[Bookshelf] search error:", err);
+      if (recordSearchLoading) recordSearchLoading.style.display = "none";
+      showToast(err.message || "도서 검색 중 오류가 발생했습니다.");
+    }
+  }
+
+  // 검색창 엔터 / 클릭 이벤트
+  if (recordBookSearchBtn) {
+    recordBookSearchBtn.addEventListener("click", handleBookSearchForRecord);
+  }
+  if (recordBookSearchInput) {
+    recordBookSearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleBookSearchForRecord();
+      }
+    });
+  }
+
+  // 도서 선택 시 중복 기록 검사 및 폼 연결
+  function selectBookForRecord(book) {
+    bookshelfState.selectedBookForRecord = book;
+
+    // 검색 결과 목록 닫기
+    if (recordSearchResults) recordSearchResults.style.display = "none";
+    if (recordBookSearchInput) recordBookSearchInput.closest(".form-group").style.display = "none";
+
+    showSelectedBookInModal(book);
+
+    // 사용자별 동일 도서 중복 기록 여부 확인 (첫 버전 도서당 1개 제한)
+    const existingRecord = bookshelfState.records.find(r => {
+      if (book.isbn && r.isbn && r.isbn.trim() === book.isbn.trim()) return true;
+      return r.title.trim().toLowerCase() === book.title.trim().toLowerCase() &&
+        r.author.trim().toLowerCase() === book.author.trim().toLowerCase();
+    });
+
+    if (existingRecord) {
+      // 이미 기록한 책인 경우: 중복 Alert 노출 및 기존 기록 수정 유도
+      if (recordDuplicateAlert) recordDuplicateAlert.style.display = "flex";
+      if (recordDetailForm) recordDetailForm.style.display = "none";
+
+      if (recordSwitchToEditBtn) {
+        recordSwitchToEditBtn.onclick = () => {
+          openBookshelfRecordModal(existingRecord);
+        };
+      }
+    } else {
+      // 신규 도서인 경우: 입력 폼 표시
+      if (recordDuplicateAlert) recordDuplicateAlert.style.display = "none";
+      if (recordDetailForm) recordDetailForm.style.display = "block";
+      if (!recordReadDate.value) recordReadDate.value = getTodayDateString();
+    }
+  }
+
+  // 다른 책 선택 (다시 검색하기)
+  if (recordReselectBookBtn) {
+    recordReselectBookBtn.addEventListener("click", () => {
+      bookshelfState.selectedBookForRecord = null;
+      if (recordSelectedBookCard) recordSelectedBookCard.style.display = "none";
+      if (recordBookSearchInput) {
+        recordBookSearchInput.closest(".form-group").style.display = "block";
+        recordBookSearchInput.focus();
+      }
+      if (recordDuplicateAlert) recordDuplicateAlert.style.display = "none";
+      if (recordDetailForm) recordDetailForm.style.display = "none";
+    });
+  }
+
+  // 별점 버튼 인터랙션 연결
+  if (recordStarButtons) {
+    const starBtns = recordStarButtons.querySelectorAll(".star-btn");
+    starBtns.forEach((btn, idx) => {
+      const ratingVal = idx + 1;
+
+      // 클릭 시 해당 별점 설정
+      btn.addEventListener("click", () => {
+        setRatingValue(ratingVal);
+      });
+
+      // hover 시 임시 활성화 미리보기
+      btn.addEventListener("mouseenter", () => {
+        starBtns.forEach((b, i) => {
+          if (i <= idx) b.classList.add("hovered");
+          else b.classList.remove("hovered");
+        });
+      });
+    });
+
+    recordStarButtons.addEventListener("mouseleave", () => {
+      starBtns.forEach(b => b.classList.remove("hovered"));
+    });
+  }
+
+  // 별점 지우기 버튼
+  if (recordRatingClearBtn) {
+    recordRatingClearBtn.addEventListener("click", () => {
+      setRatingValue(null);
+    });
+  }
+
+  // 한줄 감상 글자수 카운터
+  if (recordReviewInput) {
+    recordReviewInput.addEventListener("input", () => {
+      updateCharCount(recordReviewInput.value.length);
+    });
+  }
+
+  // 폼 제출 (저장 or 수정)
+  if (recordDetailForm) {
+    recordDetailForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!bookshelfState.selectedBookForRecord) {
+        showToast("기록할 책을 먼저 선택해 주세요.");
+        return;
+      }
+
+      const readDate = recordReadDate ? recordReadDate.value.trim() : "";
+      if (!readDate) {
+        showToast("읽은 날짜를 입력해 주세요.");
+        if (recordReadDate) recordReadDate.focus();
+        return;
+      }
+
+      const rating = bookshelfState.currentRating;
+      const review = recordReviewInput ? recordReviewInput.value.trim() : null;
+
+      if (bookshelfModalSubmitBtn) bookshelfModalSubmitBtn.disabled = true;
+
+      try {
+        if (bookshelfState.currentEditingRecord) {
+          // [수정 API 호출]
+          await BookMateAPI.updateBookshelfRecord(bookshelfState.currentEditingRecord.id, {
+            read_date: readDate,
+            rating: rating || null,
+            review: review || null
+          });
+          showToast("독서 기록이 수정되었습니다.");
+        } else {
+          // [신규 등록 API 호출] - Gemini 호출 없음, 순수 독서 기록 저장
+          const book = bookshelfState.selectedBookForRecord;
+          await BookMateAPI.createBookshelfRecord({
+            title: book.title,
+            author: book.author,
+            isbn: book.isbn || null,
+            publisher: book.publisher || null,
+            thumbnail_url: book.thumbnail_url || null,
+            read_date: readDate,
+            rating: rating || null,
+            review: review || null
+          });
+          showToast("책장에 독서 기록이 저장되었습니다.");
+        }
+
+        closeBookshelfRecordModal();
+        await loadBookshelfRecords();
+      } catch (err) {
+        console.error("[Bookshelf] save error:", err);
+        showToast(err.message || "독서 기록 저장에 실패했습니다.");
+      } finally {
+        if (bookshelfModalSubmitBtn) bookshelfModalSubmitBtn.disabled = false;
+      }
+    });
+  }
+
+  // =========================================================================
   // 헤더 인증 UI 및 로그인 / 회원가입 Modal
   // =========================================================================
+
   const headerAuthArea = document.getElementById("header-auth-area");
   const headerLoginBtn = document.getElementById("header-login-btn");
   const headerUserGroup = document.getElementById("header-user-group");
@@ -3523,16 +4257,21 @@ document.addEventListener("DOMContentLoaded", () => {
         BookMateState.clearCurrentUser();
         updateHeaderAuthUI(null);
 
-        // 인증 해제에 따른 공개 답변 캐시 및 전용 독후감/마이페이지 상태 초기화
+        // 인증 해제에 따른 공개 답변 캐시 및 전용 독후감/마이페이지/책장 상태 초기화
         answersCache.clear();
         resetWriteEssayState();
         resetMyPageState();
+        resetBookshelfState();
         if (views.writeEssay && views.writeEssay.classList.contains("active")) {
           switchView("main");
         }
         if (views.myPage && views.myPage.classList.contains("active")) {
           switchView("main");
         }
+        if (views.bookshelf && views.bookshelf.classList.contains("active")) {
+          switchView("main");
+        }
+
 
         const openPanelLogout = document.querySelector(".discussion-accordion-panel.is-open");
         if (openPanelLogout && BookMateState.currentQuestion) {

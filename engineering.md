@@ -18,7 +18,7 @@
 | :--- | :--- | :---: | :--- |
 | **Frontend** | HTML5, Vanilla CSS3, Vanilla JavaScript (ES6+) | ✅ Implemented | 경량 SPA 유지, Contemporary Editorial 테마 |
 | **Backend** | Python 3.12, FastAPI, Uvicorn, uv | ✅ Implemented | 비동기 지원, Pydantic DTO, 서버 측 인증 Dependency |
-| **Database** | Neon PostgreSQL (`psycopg3` 드라이버) | ✅ Implemented | Serverless Lakebase Postgres (`books`, `questions`, `public_answers`) |
+| **Database** | Neon PostgreSQL (`psycopg3` 드라이버) | ✅ Implemented | Serverless Lakebase Postgres (`books`, `questions`, `public_answers`, `reading_records`) |
 | **Authentication**| **Neon Auth** (Managed Better Auth) + FastAPI BFF | ✅ Implemented | Same-Origin BFF, HttpOnly `bm_session` Cookie, JWKS 서명 검증 |
 | **AI Runtime** | Google Gen AI Python SDK (`google-genai`) | ✅ Implemented | Gemini 모델, 신규 북클럽 OPEN 시에만 조건부 1회 호출 |
 | **Book Search** | Kakao Book Search REST API | ✅ Implemented | 로그인 사용자 전용 도서 검색, 검색 시 Gemini 호출 0회 |
@@ -45,6 +45,7 @@ BookMate/
 │   │   ├── book_service.py           # 책 검색(Kakao), ISBN 북클럽 식별, 열린 북클럽 목록 조회
 │   │   ├── question_service.py       # 질문 조회, 생성 분기, 추천수 관리
 │   │   ├── answer_service.py         # 공개 답변 목록 조회, 생성, 작성자 본인 수정 로직
+│   │   ├── bookshelf_service.py      # 개인 독서 기록 CRUD 및 도서 정보 연동
 │   │   └── ai_service.py             # Gemini API 연동 (초기 호스트 질문, 후속 질문, 독후감 생성)
 │   └── routers/
 │       ├── __init__.py
@@ -52,6 +53,7 @@ BookMate/
 │       ├── books.py                  # /api/books (열린 북클럽 목록, 검색, 입장, OPEN)
 │       ├── questions.py              # /api/questions (질문 조회, 제안, 추천)
 │       ├── answers.py                # /api/answers (답변 등록, 본인 답변 수정)
+│       ├── bookshelf.py              # /api/bookshelf (독서 기록 목록, 등록, 수정, 삭제, 중복 체크)
 │       └── ai.py                     # /api/ai (후속 질문, 독후감)
 ├── static/
 │   ├── index.html                    # 단일 페이지 애플리케이션 (SPA) HTML 구조 (OPEN CLUBS 메인)
@@ -82,10 +84,11 @@ BookMate/
 
 ### 3.1 서비스 데이터 흐름 원칙
 - **비로그인 허용**: 메인 열린 북클럽 목록 조회(`GET /api/books`), 북클럽 입장(`POST /api/books/enter`), 질문/답변 열람
-- **로그인 필수**: 책 검색(`GET /api/books/search`), 신규 북클럽 개설(`POST /api/books/open`), 공개 답변 작성(`POST`) 및 본인 답변 수정(`PATCH`)
-- **Gemini 비용 방지**: 도서 검색 및 기존 북클럽 입장 시 Gemini 호출 0회, 신규 북클럽 OPEN 시에만 조건부 1회 호출
+- **로그인 필수**: 책 검색(`GET /api/books/search`), 신규 북클럽 개설(`POST /api/books/open`), 공개 답변 작성(`POST`) 및 본인 답변 수정(`PATCH`), 나의 책장 독서 기록 관리(`/api/bookshelf/*`)
+- **Gemini 비용 방지**: 도서 검색, 기존 북클럽 입장, 책장 독서 기록 등록/수정 시 Gemini 호출 0회, 신규 북클럽 OPEN 시에만 조건부 1회 호출
 - **독후감 생성**: AI Follow-up 없이도 "최초 질문 + 사용자 답변"만으로 에세이 생성 가능 (`POST /api/ai/review`)
 - **AI 후속 질문 (Deferred)**: API(`POST /api/ai/follow-up`) 및 서비스는 구현 유지되나, 메인 사용자 흐름에서는 비활성화 (향후 선택 기능 후보)
+- **개인 독서 기록 (나의 책장)**: 북클럽 질문 생성 없이 도서 메타데이터만 연동하며, 개인 계정별로 안전하게 격리 CRUD 수행 (`reading_records`)
 
 ```mermaid
 flowchart TD
@@ -106,7 +109,7 @@ flowchart TD
     end
 
     subgraph Storage ["Neon PostgreSQL"]
-        DB[(books / questions / public_answers)]
+        DB[(books / questions / public_answers / reading_records)]
     end
 
     %% Flow 0: Open Book Clubs & Browse (비로그인 허용)
@@ -145,6 +148,12 @@ flowchart TD
     UI -->|4-2. 내 토론 데이터 기반 독후감 생성| AuthDep
     AuthDep --> Router --> Service --> Gemini
     Gemini --> Router --> UI
+
+    %% Flow 5: My Bookshelf (개인 독서 기록 CRUD)
+    UI -->|5-1. 독서 기록 조회/등록/수정/삭제 (인증)| AuthDep
+    AuthDep --> Router --> Service
+    Service -->|5-2. reading_records 격리 CRUD (Gemini 0회)| DB
+    DB --> Router --> UI
 ```
 
 ---
@@ -157,6 +166,7 @@ flowchart TD
 erDiagram
     books ||--o{ questions : "has"
     questions ||--o{ public_answers : "has"
+    books ||--o{ reading_records : "has"
 
     books {
         uuid id PK
@@ -186,6 +196,17 @@ erDiagram
         text answer
         timestamptz created_at
         timestamptz updated_at "Nullable (수정 시각)"
+    }
+
+    reading_records {
+        uuid id PK
+        varchar user_id "작성자 식별자 (Neon Auth ID)"
+        uuid book_id FK
+        date read_date
+        smallint rating "1 to 5, Nullable"
+        varchar review "Max 200, Nullable"
+        timestamptz created_at
+        timestamptz updated_at "Nullable"
     }
 ```
 
@@ -254,7 +275,35 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
 - 별도의 `book_clubs` 테이블을 신설하지 않는다.
 - `books` 테이블에 존재하며, `questions` 테이블에 해당 `book_id`의 질문이 1개 이상 연결되어 있는 책을 열린 북클럽으로 조회한다.
 
+### 4.6 `reading_records` 테이블 DDL (나의 책장 / 개인 독서 기록)
+
+```sql
+CREATE TABLE reading_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(255) NOT NULL,
+    book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    read_date DATE NOT NULL,
+    rating SMALLINT CHECK (rating >= 1 AND rating <= 5),
+    review VARCHAR(200),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT uq_reading_records_user_book UNIQUE (user_id, book_id)
+);
+
+CREATE INDEX idx_reading_records_user_date ON reading_records (user_id, read_date DESC);
+CREATE INDEX idx_reading_records_book_id ON reading_records (book_id);
+```
+
+> **독서 기록 데이터 및 북클럽 격리 원칙**:
+> - `user_id`: Neon Auth의 로그인 사용자 ID. 인증된 본인 기록만 조회/수정/삭제하도록 엄격히 격리.
+> - `book_id`: 기존 `books` 테이블의 UUID 외래키. 개인 기록 추가 시 도서 정보만 생성/연결하며 질문 생성이나 Gemini 호출은 일절 발생하지 않음.
+> - `uq_reading_records_user_book`: 사용자별 같은 책 중복 기록 방지 (첫 버전 도서당 1개 제한).
+> - `read_date`: 읽은 날짜(DATE, 필수).
+> - `rating`: 별점(1~5점 체크 제약, 선택).
+> - `review`: 최대 200자 한줄 감상(선택).
+
 ---
+
 
 # 5. 동일 도서 판별 및 정규화 규칙
 
@@ -304,6 +353,11 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
 | `PATCH`| `/api/answers/{answer_id}` | 본인이 작성한 공개 답변 수정 | **로그인 필수** | ✅ Implemented | 0회 | 소유권 검증 (`user_id` 일치 시만 허용) |
 | `POST` | `/api/ai/follow-up` | 사용자 답변 기반 AI 후속 질문 생성 | **로그인 필수** | ⏸ Deferred | 1회 | 백엔드 API 보존, 메인 UX 비활성화 |
 | `POST` | `/api/ai/review` | 사용자의 토론 내용을 기반으로 독후감 생성 | **로그인 필수** | ✅ Implemented | 1회 | 최초 질문 + 내 생각만으로 생성 가능 |
+| `GET` | `/api/bookshelf/records` | 본인의 개인 독서 기록 목록 조회 | **로그인 필수** | ✅ Implemented | 0회 | 읽은 날짜 최신순 정렬 |
+| `POST` | `/api/bookshelf/records` | 개인 독서 기록 생성 (도서 등록 포함) | **로그인 필수** | ✅ Implemented | 0회 | 중복 책 등록 시 409 Conflict 반환 |
+| `PATCH`| `/api/bookshelf/records/{record_id}` | 본인의 독서 기록 수정 (날짜, 별점, 감상) | **로그인 필수** | ✅ Implemented | 0회 | 소유권 검증 (본인 기록만 허용) |
+| `DELETE`| `/api/bookshelf/records/{record_id}` | 본인의 독서 기록 삭제 | **로그인 필수** | ✅ Implemented | 0회 | 소유권 검증 후 삭제 |
+| `GET` | `/api/bookshelf/check?book_id={book_id}` | 특정 도서의 독서 기록 존재 여부 확인 | **로그인 필수** | ✅ Implemented | 0회 | 중복 방지 및 수정 모달 안내용 |
 
 ---
 
@@ -446,6 +500,71 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
 ]
 ```
 
+### 7.7 본인의 독서 기록 목록 조회 (`GET /api/bookshelf/records`)
+- **인증**: 필수 (`Depends(get_current_user)`)
+- **설명**: 현재 로그인한 사용자의 모든 독서 기록을 읽은 날짜 최신순으로 조회하며, 도서 메타데이터를 함께 반환.
+- **Response Body (200 OK)**:
+```json
+[
+  {
+    "id": "rec_uuid_1",
+    "book_id": "book_uuid_1",
+    "title": "베로니카, 죽기로 결심하다",
+    "author": "파울로 코엘료",
+    "thumbnail_url": "https://...",
+    "publisher": "문학동네",
+    "read_date": "2026-09-15",
+    "rating": 5,
+    "review": "죽음 앞에서 비로소 삶의 소중함을 깨닫게 해준 책.",
+    "created_at": "2026-09-15T12:00:00Z",
+    "updated_at": null
+  }
+]
+```
+
+### 7.8 독서 기록 등록 (`POST /api/bookshelf/records`)
+- **인증**: 필수 (`Depends(get_current_user)`)
+- **Request Body**:
+```json
+{
+  "book": {
+    "title": "베로니카, 죽기로 결심하다",
+    "author": "파울로 코엘료",
+    "isbn": "9788954602280",
+    "publisher": "문학동네",
+    "thumbnail_url": "https://..."
+  },
+  "read_date": "2026-09-15",
+  "rating": 5,
+  "review": "죽음 앞에서 비로소 삶의 소중함을 깨닫게 해준 책."
+}
+```
+- **Response Body (201 Created)**: `ReadingRecordResponse` 객체 반환
+- **중복 도서 충돌 (409 Conflict)**:
+```json
+{
+  "detail": "이미 책장에 등록된 책입니다."
+}
+```
+
+### 7.9 특정 도서 기록 존재 여부 확인 (`GET /api/bookshelf/check?book_id={book_id}`)
+- **인증**: 필수 (`Depends(get_current_user)`)
+- **Response Body (200 OK)**:
+```json
+{
+  "exists": true,
+  "record": {
+    "id": "rec_uuid_1",
+    "book_id": "book_uuid_1",
+    "title": "베로니카, 죽기로 결심하다",
+    "author": "파울로 코엘료",
+    "read_date": "2026-09-15",
+    "rating": 5,
+    "review": "죽음 앞에서 비로소 삶의 소중함을 깨닫게 해준 책."
+  }
+}
+```
+
 ---
 
 # 8. 핵심 비즈니스 로직 및 흐름 상세
@@ -493,6 +612,21 @@ CREATE INDEX idx_public_answers_user_id ON public_answers (user_id);
    - 사용자가 책 A를 클릭한 직후 책 B를 빠르게 클릭할 경우, 네트워크 지연으로 인해 늦게 도착한 책 A의 응답이 화면을 덮어쓰지 않도록 `myPageReqSeq` 시퀀스 번호를 증가시켜 최종 선택한 책의 응답만 DOM에 렌더링한다.
 3. **북클럽 수정 내용과의 동기화**:
    - 마이페이지의 '북클럽에서 보기 ↗'를 통해 북클럽으로 이동하여 인라인으로 답변을 수정한 뒤 마이페이지로 복귀하면, 마이페이지 재진입 시 항상 최신 상태를 비동기로 조회하여 수정된 내용이 즉시 반영된다.
+
+### 8.7 나의 책장 서비스 로직 및 격리 원칙
+1. **북클럽과 개인 기록의 완전 분리 (Zero Gemini Side-effect)**:
+   - 책장에 독서 기록을 남길 때 도서 메타데이터는 기존 `books` 테이블을 재사용하되, **Gemini 호스트 질문 생성 로직을 절대 실행하지 않는다 (Gemini 호출 0회).**
+   - 열린 북클럽 목록 조회(`get_open_book_clubs()`)는 `questions` 테이블과의 조인을 기준으로 하므로, 개인 책장에만 등록된 책은 메인 '01 열린 북클럽' 목록에 노출되지 않아 북클럽 도서 풀이 오염되지 않는다.
+2. **중복 기록 방지 및 예외 처리**:
+   - DB 레벨의 `uq_reading_records_user_book` 제약조건을 통해 사용자당 도서 1권 1기록 규칙을 보장한다.
+   - 중복 등록 시도 시 DB `IntegrityError`를 포착하여 클라이언트에 `409 Conflict`와 적절한 안내 메시지를 반환하며, 프론트엔드는 이를 바탕으로 기존 기록 수정 모달을 제안한다.
+3. **PostgreSQL/psycopg3 UUID 호환성 및 Pydantic v2 직렬화 안전성**:
+   - `psycopg3` 드라이버는 PostgreSQL `UUID` 컬럼을 파이썬 `uuid.UUID` 인스턴스로 반환한다.
+   - Pydantic v2 모델에서 문자열 타입 검증 시 발생할 수 있는 직렬화 오류(500 Internal Server Error)를 원천 차단하기 위해:
+     - SQL 쿼리 레벨에서 `id::text AS id`, `book_id::text AS book_id`로 명시적 캐스팅을 적용한다.
+     - Pydantic DTO(`ReadingRecordResponse`)에 `@field_validator("id", "book_id", mode="before")`를 추가하여 `uuid.UUID` 객체가 유입되더라도 `str(v)`로 자동 변환되도록 이중 안전장치를 구축했다.
+4. **엄격한 소유권 검증**:
+   - 기록 수정(`PATCH`) 및 삭제(`DELETE`) 요청 시 `current_user.id`가 기록의 `user_id`와 일치하는지 백엔드에서 반드시 검증하며, 타인 기록에 대한 접근은 `403 Forbidden`으로 원천 차단한다.
 
 ---
 
@@ -586,7 +720,7 @@ NEON_AUTH_JWKS_URL=https://auth.neon.tech/neondb/.../.well-known/jwks.json
 
 # 13. 단계별 마이그레이션 현황 (Migration Phases)
 
-기존 정상 작동 기능 보존 및 리스크 최소화 원칙에 따라 단계별로 진행되었으며, 현재 Phase 1~5가 실제 코드베이스에 반영 완료되었다.
+기존 정상 작동 기능 보존 및 리스크 최소화 원칙에 따라 단계별로 진행되었으며, 현재 Phase 1~7이 실제 코드베이스에 반영 완료되었다.
 
 ```text
 ✅ Phase 1: 열린 북클럽 조회 기반 [구현 완료]
@@ -605,7 +739,7 @@ NEON_AUTH_JWKS_URL=https://auth.neon.tech/neondb/.../.well-known/jwks.json
   - 호환: user_id IS NULL인 기존 익명 답변은 읽기 전용으로 영구 보존
 
 ✅ Phase 4: 메인 화면 개편 (BOOKMATE WORLD 중심) [구현 완료]
-  - 성과: Town Stage 2단 구조 (Town Hero + 일러스트 오버레이 마커 01, 02, 03)
+  - 성과: Town Stage 2단 구조 (Town Hero + 일러스트 오버레이 마커 01, 02, 03, 04)
   - 연동: 01 OPEN BOOK CLUBS 수평 스트립, 비로그인 guest-cta 배너 노출
 
 ✅ Phase 5: 로그인 기반 도서 검색/OPEN 분리 & Gemini 비용 방어 [구현 완료]
@@ -619,7 +753,13 @@ NEON_AUTH_JWKS_URL=https://auth.neon.tech/neondb/.../.well-known/jwks.json
   - 안정성: 빠른 책 전환 레이스 컨디션 방지 (myPageReqSeq) 및 비로그인 접근 차단
   - 연동: 북클럽 질문 아코디언 열기 및 답변 위치 스크롤, 선택 책 독후감 쓰기 바로 연결
 
-📌 Phase 7: 후속 확장 과제 (좋아요 계정화 & 개인 토론/독후감 DB 저장) [향후 계획]
+✅ Phase 7: 나의 책장 (독립된 개인 독서 기록 CRUD 및 북클럽 연결) [구현 완료]
+  - 성과: 메인 마커(04 나의 책장) 및 전용 화면(#view-bookshelf), 독서 기록 모달(#bookshelf-modal)
+  - DB: reading_records 테이블 및 uq_reading_records_user_book 제약조건 적용
+  - API: /api/bookshelf/records (GET, POST), /api/bookshelf/records/{id} (PATCH, DELETE), /api/bookshelf/check (GET)
+  - 안정성: 도서 등록 시 북클럽 질문 생성 미호출 격리, UUID 문자열 변환 이중 방어, 마이페이지 바로가기 연동
+
+📌 Phase 8: 후속 확장 과제 (좋아요 계정화 & 개인 토론/독후감 DB 저장) [향후 계획]
   - 목표: 서비스 안정화 후 사용자 계정 기반 영구 저장으로 확장
-  - 과제: question_likes DB 테이블 도입, AI 개인 대화 및 독후감 DB 저장 모델 구축
+  - 과제: question_likes DB 테이블 도입, AI 개인 대화 및 독후감 DB 저장 모델 구축, 독서 통계 및 장르별 분석
 ```

@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # 1. 책 관련 모델
@@ -179,5 +179,54 @@ class BookLookupResponse(BaseModel):
     isbn: str | None = None
     publisher: str | None = None
     thumbnail_url: str | None = None
+
+
+# 7. 나의 책장 (Reading Record) 관련 모델
+class ReadingRecordCreateRequest(BaseModel):
+    """독서 기록 생성 요청 모델"""
+    title: str = Field(..., min_length=1, max_length=255, description="책 제목")
+    author: str = Field(..., min_length=1, max_length=255, description="작가 이름")
+    isbn: str | None = Field(default=None, max_length=20, description="ISBN")
+    publisher: str | None = Field(default=None, max_length=255, description="출판사")
+    thumbnail_url: str | None = Field(default=None, description="책 표지 URL")
+    read_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="읽은 날짜 (YYYY-MM-DD)")
+    rating: int | None = Field(default=None, ge=1, le=5, description="별점 1~5 (선택)")
+    review: str | None = Field(default=None, max_length=200, description="한줄 감상 최대 200자 (선택)")
+
+
+class ReadingRecordUpdateRequest(BaseModel):
+    """독서 기록 수정 요청 모델"""
+    read_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="읽은 날짜 (YYYY-MM-DD)")
+    rating: int | None = Field(default=None, ge=1, le=5, description="별점 1~5 (선택)")
+    review: str | None = Field(default=None, max_length=200, description="한줄 감상 최대 200자 (선택)")
+
+
+class ReadingRecordResponse(BaseModel):
+    """독서 기록 응답 모델 (도서 정보 포함)"""
+    id: str
+    book_id: str
+    title: str
+    author: str
+    isbn: str | None = None
+    publisher: str | None = None
+    thumbnail_url: str | None = None
+    read_date: str
+    rating: int | None = None
+    review: str | None = None
+    created_at: str
+    updated_at: str | None = None
+
+    @field_validator("id", "book_id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        return str(v) if v is not None else v
+
+
+
+class ReadingRecordCheckResponse(BaseModel):
+    """도서의 기존 기록 존재 여부 확인 응답 모델"""
+    exists: bool
+    record: ReadingRecordResponse | None = None
+
 
 

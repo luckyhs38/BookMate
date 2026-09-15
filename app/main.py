@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import books, questions, answers, ai, auth
+from app.routers import books, questions, answers, ai, auth, bookshelf
 
 app = FastAPI(
     title="BOOKMATE API",
@@ -28,6 +28,7 @@ app.include_router(questions.router)
 app.include_router(answers.router)
 app.include_router(ai.router)
 app.include_router(auth.router)
+app.include_router(bookshelf.router)
 
 
 # 유효성 검증 예외 핸들러

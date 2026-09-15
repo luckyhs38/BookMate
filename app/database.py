@@ -78,6 +78,7 @@ class InMemoryDatabase:
             "books": [],
             "questions": [],
             "public_answers": [],
+            "reading_records": [],
         }
 
     def clear(self):
@@ -104,6 +105,8 @@ class InMemoryDatabase:
         sql_upper = sql_normalized.upper()
 
         if sql_upper.startswith("SELECT"):
+            if "FROM READING_RECORDS" in sql_upper and "JOIN BOOKS" in sql_upper:
+                return self._handle_reading_records_select(sql_normalized, params)
             if "MY_THOUGHT_COUNT" in sql_upper:
                 return self._handle_user_answered_books_select(params)
             if "FROM PUBLIC_ANSWERS PA" in sql_upper and "JOIN QUESTIONS Q" in sql_upper and "PA.USER_ID = %S" in sql_upper:
@@ -115,6 +118,8 @@ class InMemoryDatabase:
             return self._handle_insert(sql_normalized, params)
         elif sql_upper.startswith("UPDATE"):
             return self._handle_update(sql_normalized, params)
+        elif sql_upper.startswith("DELETE"):
+            return self._handle_delete(sql_normalized, params)
         else:
             return _FetchResult([])
 
@@ -235,6 +240,83 @@ class InMemoryDatabase:
         )
         return _FetchResult(results)
 
+    def _handle_reading_records_select(self, sql: str, params: tuple) -> "_FetchResult":
+        """테스트용: reading_records와 books JOIN 쿼리 처리"""
+        records = list(self._store.get("reading_records", []))
+        books = {str(b.get("id")): b for b in self._store.get("books", [])}
+
+        user_id = str(params[0]) if len(params) > 0 else ""
+        results = []
+
+        is_single = "LIMIT 1" in sql.upper()
+        record_id = None
+        book_id = None
+        if is_single:
+            if "R.ID = %S" in sql.upper():
+                record_id = str(params[0])
+                user_id = str(params[1]) if len(params) > 1 else ""
+            elif "R.BOOK_ID = %S" in sql.upper():
+                user_id = str(params[0])
+                book_id = str(params[1]) if len(params) > 1 else ""
+
+        for r in records:
+            if str(r.get("user_id")) != user_id:
+                continue
+            if record_id and str(r.get("id")) != record_id:
+                continue
+            if book_id and str(r.get("book_id")) != book_id:
+                continue
+
+            b = books.get(str(r.get("book_id")), {})
+            row = {
+                "id": str(r.get("id")),
+                "book_id": str(r.get("book_id")),
+                "title": b.get("title", ""),
+                "author": b.get("author", ""),
+                "isbn": b.get("isbn"),
+                "publisher": b.get("publisher"),
+                "thumbnail_url": b.get("thumbnail_url"),
+                "read_date": str(r.get("read_date") or ""),
+                "rating": r.get("rating"),
+                "review": r.get("review"),
+                "created_at": str(r.get("created_at") or ""),
+                "updated_at": str(r.get("updated_at") or "") if r.get("updated_at") else None,
+            }
+            results.append(row)
+            if is_single:
+                break
+
+        if not is_single:
+            results.sort(
+                key=lambda item: (str(item.get("read_date") or ""), str(item.get("created_at") or "")),
+                reverse=True,
+            )
+
+        return _FetchResult(results)
+
+    def _handle_delete(self, sql: str, params: tuple) -> "_FetchResult":
+        """DELETE FROM table WHERE ... 처리"""
+        tokens = sql.split()
+        table = ""
+        for i, tok in enumerate(tokens):
+            if tok.upper() == "FROM" and i + 1 < len(tokens):
+                table = tokens[i + 1].lower()
+                break
+
+        records = self._get_table(table)
+        conditions = self._parse_where(sql, params)
+
+        remaining = []
+        deleted = []
+        for r in records:
+            if self._match_row(r, conditions):
+                deleted.append(dict(r))
+            else:
+                remaining.append(r)
+
+        self._store[table] = remaining
+        return _FetchResult(deleted)
+
     def _get_table_name(self, sql_normalized: str) -> str:
         """FROM 또는 INTO 또는 UPDATE 다음 테이블명 추출"""
         tokens = sql_normalized.split()
@@ -244,6 +326,7 @@ class InMemoryDatabase:
                 if idx + 1 < len(tokens):
                     return tokens[idx + 1].lower()
         return ""
+
 
     def _get_table(self, table: str) -> list[dict]:
         return self._store.setdefault(table, [])

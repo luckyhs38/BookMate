@@ -186,5 +186,44 @@ const BookMateAPI = {
     const params = new URLSearchParams({ title, author });
     if (isbn) params.append("isbn", isbn);
     return this.request(`/api/books/lookup?${params.toString()}`);
+  },
+
+  // 11. 나의 책장 (독서 기록) API
+  async getBookshelfRecords() {
+    return this.request("/api/bookshelf/records", {
+      credentials: "same-origin"
+    });
+  },
+
+  async createBookshelfRecord(data) {
+    return this.request("/api/bookshelf/records", {
+      method: "POST",
+      credentials: "same-origin",
+      body: JSON.stringify(data)
+    });
+  },
+
+  async updateBookshelfRecord(recordId, data) {
+    return this.request(`/api/bookshelf/records/${recordId}`, {
+      method: "PUT",
+      credentials: "same-origin",
+      body: JSON.stringify(data)
+    });
+  },
+
+  async deleteBookshelfRecord(recordId) {
+    return this.request(`/api/bookshelf/records/${recordId}`, {
+      method: "DELETE",
+      credentials: "same-origin"
+    });
+  },
+
+  async checkBookshelfRecord(title, author, isbn = null) {
+    const params = new URLSearchParams({ title, author });
+    if (isbn) params.append("isbn", isbn);
+    return this.request(`/api/bookshelf/check?${params.toString()}`, {
+      credentials: "same-origin"
+    });
   }
 };
+
