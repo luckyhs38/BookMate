@@ -802,6 +802,100 @@ body {
 }
 
 /* ==========================================================================
+   Regenerate Question Button & Preview Modal
+   ========================================================================== */
+.regen-btn {
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  padding: 3px 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0;
+  line-height: 1;
+}
+
+.regen-btn:hover {
+  border-color: var(--accent-burgundy);
+  color: var(--accent-burgundy);
+}
+
+.regen-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.regen-icon {
+  display: inline-block;
+  font-size: 0.9rem;
+}
+
+.regen-icon.spinning {
+  animation: regenSpin 0.8s linear infinite;
+}
+
+@keyframes regenSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Preview modal card (extends .auth-modal-card) */
+.regen-preview-card {
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.regen-section-label {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-xs);
+}
+
+.regen-content-box {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 4px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.regen-before {
+  background-color: var(--surface-subtle, #f8f8f8);
+  opacity: 0.7;
+}
+
+.regen-after {
+  background-color: rgba(130, 40, 50, 0.04);
+  border-left: 3px solid var(--accent-burgundy);
+}
+
+.regen-warning {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: var(--space-md);
+  padding: var(--space-xs) 0;
+}
+
+.regen-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.regen-actions .btn {
+  flex: 1;
+}
+
+/* ==========================================================================
    Discussion View — Topic Hero & Quotes
    ========================================================================== */
 .selected-question-hero {

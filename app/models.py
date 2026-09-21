@@ -70,6 +70,19 @@ class QuestionLikeResponse(BaseModel):
     likes: int
 
 
+class RegeneratePreviewResponse(BaseModel):
+    """재생성 미리보기 응답: 원본과 새 질문을 비교 표시용"""
+    question_id: str
+    original_content: str
+    new_content: str
+
+
+class ApplyRegeneratedRequest(BaseModel):
+    """재생성 적용 요청: 미리보기에서 확인한 새 질문과 낙관적 잠금용 원본 내용"""
+    new_content: str = Field(..., min_length=2, description="새로 생성된 질문 내용")
+    original_content: str = Field(..., min_length=2, description="요청 시점의 원본 질문 내용 (동시성 검증용)")
+
+
 # 3. 공개 답변 관련 모델
 class PublicAnswerCreateRequest(BaseModel):
     answer: str = Field(..., min_length=2, max_length=2000, description="답변 내용")

@@ -170,7 +170,7 @@ const BookMateComponents = {
     }
   },
 
-  createQuestionCard(question, onToggleAccordion, onLike, index = 1) {
+  createQuestionCard(question, onToggleAccordion, onLike, index = 1, onRegenerate = null) {
     const item = document.createElement("div");
     item.className = "question-row-item";
     if (question && question.id) {
@@ -211,9 +211,27 @@ const BookMateComponents = {
 
     footerEl.appendChild(metaGroupEl);
 
-    // 우측 액션 (추천 + 토론 입장)
+    // 우측 액션 (재생성 + 추천 + 토론 입장)
     const actionsGroupEl = document.createElement("div");
     actionsGroupEl.className = "question-actions-group";
+
+    // 재생성 버튼: AI 질문이고 답변·추천이 모두 없을 때만 표시
+    const canRegenerate = question.source === "AI"
+      && (question.likes || 0) === 0
+      && (question.public_answers_count || 0) === 0;
+
+    if (canRegenerate && onRegenerate) {
+      const regenBtn = document.createElement("button");
+      regenBtn.className = "regen-btn";
+      regenBtn.type = "button";
+      regenBtn.title = "이 질문을 다시 생성합니다";
+      regenBtn.innerHTML = `<span class="regen-icon">↻</span>`;
+      regenBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onRegenerate(question, item, regenBtn);
+      });
+      actionsGroupEl.appendChild(regenBtn);
+    }
 
     const isLiked = BookMateState.isQuestionLiked(question.id);
     const likeBtn = document.createElement("button");

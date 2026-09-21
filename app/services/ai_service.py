@@ -122,6 +122,80 @@ def generate_initial_questions(
     return [str(q).strip() for q in questions[:5]]
 
 
+def generate_single_question(
+    book_title: str, author: str, existing_questions: list[str]
+) -> str:
+    """기존 질문과 중복되지 않는 대체 토론 질문 1개 생성
+
+    generate_initial_questions와 동일한 3단 구조(대주제/인용구/세부질문)를 따르며,
+    기존 질문 목록을 중복 금지 목록으로 제공합니다.
+    """
+    client = _get_gemini_client()
+
+    if not client:
+        raise RuntimeError(
+            "Gemini API Key가 설정되지 않았습니다. "
+            ".env 파일에 GEMINI_API_KEY를 설정해 주세요."
+        )
+
+    existing_list = "\n".join(
+        f"- {q}" for q in existing_questions if q.strip()
+    )
+
+    prompt = f"""[역할 설정]
+당신은 참여자들의 편안하고 깊이 있는 독서 토론을 이끄는 전문 북클럽 호스트입니다.
+
+[작업 목표]
+제시된 도서에 대해 독자들이 자신의 삶과 가치관을 연결하여 토론할 수 있는 **새로운 대체 질문 1개**를 생성하십시오.
+
+[세부 조건]
+- 작성 구조: '대주제(번호. 제목)', '책의 구절 또는 상황 요약', '세부 질문(번호-1, 번호-2 등)'의 3단 구조로 작성하십시오.
+- 문단 분리: 각 영역(대주제, 책의 구절 또는 상황 요약, 세부 질문) 사이에는 반드시 빈 줄('\\n\\n')을 넣어 문단을 명확히 구분하십시오.
+- 질문 내용: 객관적인 논점 분석보다는 독자 개인의 경험, 가치관, 현실 인식에 빗대어 성찰할 수 있는 주제를 다루십시오.
+- 어조: 참여를 부드럽게 독려하는 친절한 경어체(예: '~인가요?', '~하나요?', '~하시겠습니까?')를 사용하십시오.
+- **아래 기존 질문들과 주제·관점이 겹치지 않는 완전히 새로운 질문**을 만들어 주십시오.
+
+[대상 도서 정보]
+- 도서명 및 저자: {book_title}, {author}
+
+[기존 질문 목록 — 중복 금지]
+{existing_list}
+
+[작성 제약사항 및 출력 형식]
+- 확실하지 않은 세부 줄거리나 결말을 추측해 지어내지 마십시오.
+- 시스템 호환성을 위해 반드시 순수 JSON 배열 형식으로만 응답해야 합니다. (Markdown 코드 블록 기호 제거)
+- 배열의 요소는 **정확히 1개**이며, 하나의 완성된 질문 세트(대주제, 요약, 세부 질문)를 포함하는 단일 문자열이어야 합니다.
+- 각 문자열 내부의 문단 간 줄바꿈은 '\\n\\n'으로 처리하여 JSON 문법 오류가 발생하지 않도록 하십시오.
+
+응답 예시:
+["1. [대주제 제목]\\n\\n\\"[도서 내 의미 있는 인용구]\\" 또는 [도서 내 특정 상황에 대한 간략한 요약 설명]\\n\\n1-1. [독자의 삶과 가치관에 연결되는 구체적인 질문]"]
+"""
+
+    start = time.perf_counter()
+    response = _generate_content_with_retry(
+        client=client,
+        model=settings.GEMINI_MODEL,
+        contents=prompt,
+    )
+    elapsed = time.perf_counter() - start
+    logger.info(f"Gemini single question regenerated in {elapsed:.2f}s")
+
+    text = response.text.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+
+    result = json.loads(text)
+    if isinstance(result, list) and len(result) >= 1:
+        return str(result[0]).strip()
+
+    raise ValueError(f"Gemini가 유효한 대체 질문을 반환하지 않았습니다: {text[:200]}")
+
+
 def generate_follow_up_question(
     book_title: str, question_content: str, user_answer: str
 ) -> str:

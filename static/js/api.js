@@ -224,6 +224,25 @@ const BookMateAPI = {
     return this.request(`/api/bookshelf/check?${params.toString()}`, {
       credentials: "same-origin"
     });
+  },
+
+  // 12. AI 질문 재생성 API
+  async regenerateQuestion(questionId) {
+    return this.request(`/api/questions/${questionId}/regenerate`, {
+      method: "POST",
+      credentials: "same-origin"
+    });
+  },
+
+  async applyRegeneratedQuestion(questionId, newContent, originalContent) {
+    return this.request(`/api/questions/${questionId}/apply-regenerated`, {
+      method: "POST",
+      credentials: "same-origin",
+      body: JSON.stringify({
+        new_content: newContent,
+        original_content: originalContent
+      })
+    });
   }
 };
 

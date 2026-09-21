@@ -810,7 +810,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (aiQuestions.length > 0) {
       aiQuestions.forEach((q, i) => {
         aiQuestionsListEl.appendChild(
-          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1)
+          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1, handleRegenerateQuestion)
         );
       });
     } else {
@@ -867,6 +867,155 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showToast(err.message || "추천 처리에 실패했습니다.");
     }
+  }
+
+  // AI 질문 재생성 핸들러
+  async function handleRegenerateQuestion(question, questionRowEl, regenBtn) {
+    // 1. 비로그인 시 로그인 팝업
+    if (!BookMateState.currentUser) {
+      showToast("질문을 재생성하려면 로그인이 필요합니다.");
+      openAuthModal("login");
+      return;
+    }
+
+    // 2. 중복 클릭 방지
+    if (regenBtn.disabled) return;
+    regenBtn.disabled = true;
+    const origIcon = regenBtn.innerHTML;
+    regenBtn.innerHTML = `<span class="regen-icon spinning">↻</span>`;
+
+    try {
+      // 3. 서버에 재생성 요청 (미리보기)
+      const preview = await BookMateAPI.regenerateQuestion(question.id);
+
+      // 4. 미리보기 모달 표시
+      showRegenPreviewModal(question, preview, questionRowEl);
+    } catch (err) {
+      showToast(err.message || "질문 재생성에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      regenBtn.disabled = false;
+      regenBtn.innerHTML = origIcon;
+    }
+  }
+
+  // 재생성 미리보기 모달
+  function showRegenPreviewModal(question, preview, questionRowEl) {
+    // 기존 모달 제거
+    const existingModal = document.getElementById("regen-preview-modal");
+    if (existingModal) existingModal.remove();
+
+    // 오버레이
+    const overlay = document.createElement("div");
+    overlay.id = "regen-preview-modal";
+    overlay.className = "auth-modal-overlay";
+    overlay.style.display = "flex";
+
+    // 카드
+    const card = document.createElement("div");
+    card.className = "auth-modal-card regen-preview-card";
+
+    // 닫기 버튼
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "auth-modal-close-btn";
+    closeBtn.type = "button";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.addEventListener("click", () => overlay.remove());
+    card.appendChild(closeBtn);
+
+    // 타이틀
+    const titleEl = document.createElement("div");
+    titleEl.className = "auth-modal-title";
+    titleEl.textContent = "REGENERATED QUESTION PREVIEW";
+    card.appendChild(titleEl);
+
+    // BEFORE 섹션
+    const beforeLabel = document.createElement("div");
+    beforeLabel.className = "regen-section-label";
+    beforeLabel.textContent = "BEFORE";
+    card.appendChild(beforeLabel);
+
+    const beforeContent = document.createElement("div");
+    beforeContent.className = "regen-content-box regen-before";
+    BookMateComponents.renderFormattedQuestion(beforeContent, preview.original_content);
+    card.appendChild(beforeContent);
+
+    // 구분선
+    const divider = document.createElement("hr");
+    divider.className = "accordion-section-divider";
+    card.appendChild(divider);
+
+    // AFTER 섹션
+    const afterLabel = document.createElement("div");
+    afterLabel.className = "regen-section-label";
+    afterLabel.textContent = "AFTER";
+    card.appendChild(afterLabel);
+
+    const afterContent = document.createElement("div");
+    afterContent.className = "regen-content-box regen-after";
+    BookMateComponents.renderFormattedQuestion(afterContent, preview.new_content);
+    card.appendChild(afterContent);
+
+    // 경고 안내
+    const warningEl = document.createElement("div");
+    warningEl.className = "regen-warning";
+    warningEl.textContent = "⚠ 적용하면 다른 독자에게도 변경된 질문이 보입니다.";
+    card.appendChild(warningEl);
+
+    // 버튼 영역
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "regen-actions";
+
+    const applyBtn = document.createElement("button");
+    applyBtn.type = "button";
+    applyBtn.className = "btn btn-primary";
+    applyBtn.textContent = "적용하기";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.textContent = "취소";
+    cancelBtn.addEventListener("click", () => overlay.remove());
+
+    applyBtn.addEventListener("click", async () => {
+      applyBtn.disabled = true;
+      applyBtn.textContent = "적용 중...";
+      try {
+        await BookMateAPI.applyRegeneratedQuestion(
+          question.id,
+          preview.new_content,
+          preview.original_content
+        );
+        overlay.remove();
+        showToast("질문이 교체되었습니다.");
+
+        // 캐시 무효화 및 화면 갱신
+        answersCache.delete(question.id);
+        closeAllAccordions();
+        if (BookMateState.currentBook && BookMateState.currentBook.id) {
+          await loadAndRenderQuestions(BookMateState.currentBook.id);
+        }
+      } catch (err) {
+        showToast(err.message || "질문 교체에 실패했습니다.");
+        // 409 등 충돌 시 목록 새로고침
+        if (BookMateState.currentBook && BookMateState.currentBook.id) {
+          await loadAndRenderQuestions(BookMateState.currentBook.id);
+        }
+        overlay.remove();
+      }
+    });
+
+    actionsEl.appendChild(applyBtn);
+    actionsEl.appendChild(cancelBtn);
+    card.appendChild(actionsEl);
+
+    overlay.appendChild(card);
+
+    // 오버레이 배경 클릭 시 닫기
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    document.body.appendChild(overlay);
   }
 
   // 질문 선택 → Accordion 토글
