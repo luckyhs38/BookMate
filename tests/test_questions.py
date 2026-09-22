@@ -12,8 +12,8 @@ def test_get_book_questions(client):
     assert questions[0]["book_id"] == book_id
 
 
-def test_add_user_question(client):
-    """독자가 직접 새로운 토론 질문 추가 테스트"""
+def test_add_user_question(client, mock_current_user):
+    """독자가 직접 새로운 토론 질문 추가 테스트 — 로그인 상태"""
     # 책 생성
     enter_res = client.post("/api/books/enter", json={"title": "코스모스", "author": "칼 세이건"})
     book_id = enter_res.json()["book"]["id"]
@@ -32,6 +32,16 @@ def test_add_user_question(client):
     # 전체 목록에서 조회되는지 확인
     list_res = client.get(f"/api/books/{book_id}/questions")
     assert len(list_res.json()) == 6
+
+
+def test_add_user_question_unauthorized(client):
+    """독자 질문 추가 비로그인 호출 시 401 차단 테스트"""
+    enter_res = client.post("/api/books/enter", json={"title": "코스모스", "author": "칼 세이건"})
+    book_id = enter_res.json()["book"]["id"]
+
+    payload = {"content": "우주 속에서 인간이라는 존재의 의미는 무엇일까요?"}
+    res = client.post(f"/api/books/{book_id}/questions", json=payload)
+    assert res.status_code == 401
 
 
 def test_like_question(client):

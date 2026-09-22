@@ -2,8 +2,8 @@ from unittest.mock import patch, MagicMock
 from app.services.ai_service import generate_book_review, generate_initial_questions
 
 
-def test_ai_follow_up_endpoint(client):
-    """AI 후속 질문 생성 엔드포인트 테스트 — Gemini Mock 사용"""
+def test_ai_follow_up_endpoint(client, mock_current_user):
+    """AI 후속 질문 생성 엔드포인트 테스트 — 로그인 상태 + Gemini Mock"""
     payload = {
         "book_title": "아몬드",
         "question_content": "곤은 악한 사람이라고 생각하나요?",
@@ -17,8 +17,19 @@ def test_ai_follow_up_endpoint(client):
     assert len(data["follow_up_question"]) > 0
 
 
-def test_ai_review_endpoint(client):
-    """독후감 생성 엔드포인트 테스트 — Gemini Mock 사용"""
+def test_ai_follow_up_unauthorized(client):
+    """AI 후속 질문 비로그인 호출 시 401 차단 테스트"""
+    payload = {
+        "book_title": "아몬드",
+        "question_content": "질문",
+        "user_answer": "답변"
+    }
+    res = client.post("/api/ai/follow-up", json=payload)
+    assert res.status_code == 401
+
+
+def test_ai_review_endpoint(client, mock_current_user):
+    """독후감 생성 엔드포인트 테스트 — 로그인 상태 + Gemini Mock"""
     payload = {
         "book_title": "아몬드",
         "author": "손원평",
@@ -38,6 +49,18 @@ def test_ai_review_endpoint(client):
     data = res.json()
     assert "review" in data
     assert len(data["review"]) > 0
+
+
+def test_ai_review_unauthorized(client):
+    """독후감 생성 비로그인 호출 시 401 차단 테스트"""
+    payload = {
+        "book_title": "아몬드",
+        "author": "손원평",
+        "style": "자연스러운 개인 감상",
+        "discussions": []
+    }
+    res = client.post("/api/ai/review", json=payload)
+    assert res.status_code == 401
 
 
 def test_review_excludes_other_users_answers():

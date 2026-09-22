@@ -31,6 +31,13 @@ const BookMateState = {
 
   clearCurrentUser() {
     this.currentUser = null;
+    this.discussions = [];
+    this.generatedReview = null;
+    try {
+      sessionStorage.removeItem("bookmate_session");
+    } catch (e) {
+      console.warn("Failed to clear sessionStorage on user clear:", e);
+    }
   },
 
   // 새로고침 시 세션 복구 (서버 First-Party bm_session 쿠키 기준)

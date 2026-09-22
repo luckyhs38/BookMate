@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from app.dependencies import get_current_user
 from app.models import (
     FollowUpRequest,
     FollowUpResponse,
     ReviewRequest,
     ReviewResponse,
+    UserResponse,
 )
 from app.services import ai_service
 
@@ -15,7 +17,10 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
     response_model=FollowUpResponse,
     status_code=status.HTTP_200_OK,
 )
-def create_follow_up_question(req: FollowUpRequest):
+def create_follow_up_question(
+    req: FollowUpRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
     """
     사용자의 답변을 바탕으로 생각을 확장해 주는 AI 후속 질문 생성
     (서버 DB에 저장하지 않음)
@@ -45,7 +50,10 @@ def create_follow_up_question(req: FollowUpRequest):
     response_model=ReviewResponse,
     status_code=status.HTTP_200_OK,
 )
-def create_book_review(req: ReviewRequest):
+def create_book_review(
+    req: ReviewRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
     """
     현재 사용자가 직접 작성한 개인 토론 내용만을 조합하여 맞춤형 독후감 생성
     (타인의 공개 답변은 프롬프트에 포함하지 않으며, 서버 DB에 저장하지 않음)

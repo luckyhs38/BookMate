@@ -57,7 +57,11 @@ def get_book_questions(book_id: str):
     response_model=QuestionResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def add_user_question(book_id: str, req: QuestionCreateRequest):
+def add_user_question(
+    book_id: str,
+    req: QuestionCreateRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
     """독자가 직접 새로운 토론 질문 제안 및 등록"""
     book = book_service.get_book_by_id(book_id)
     if not book:
