@@ -176,6 +176,14 @@ def regenerate_question(
         )
 
     all_questions = question_service.get_questions_by_book_id(book_id)
+
+    # 원래 질문의 번호 계산
+    question_number = 1
+    for i, q in enumerate(all_questions):
+        if str(q["id"]) == question_id:
+            question_number = i + 1
+            break
+
     existing_contents = [q["content"] for q in all_questions]
 
     _regenerating_question_ids.add(question_id)
@@ -184,6 +192,7 @@ def regenerate_question(
             book_title=book["title"],
             author=book["author"],
             existing_questions=existing_contents,
+            question_number=question_number,
         )
         _regen_cooldown[question_id] = time.time()
     except Exception as e:

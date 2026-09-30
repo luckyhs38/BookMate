@@ -46,7 +46,7 @@ def _generate_content_with_retry(client, model: str, contents: str, max_retries:
             else:
                 logger.error(f"Gemini API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
                 raise last_error
-    raise last_error
+    raise last_error if last_error is not None else RuntimeError("Gemini API 호출 실패")
 
 
 def generate_initial_questions(
@@ -123,7 +123,7 @@ def generate_initial_questions(
 
 
 def generate_single_question(
-    book_title: str, author: str, existing_questions: list[str]
+    book_title: str, author: str, existing_questions: list[str],question_number: int = 1
 ) -> str:
     """기존 질문과 중복되지 않는 대체 토론 질문 1개 생성
 
@@ -150,6 +150,7 @@ def generate_single_question(
 
 [세부 조건]
 - 작성 구조: '대주제(번호. 제목)', '책의 구절 또는 상황 요약', '세부 질문(번호-1, 번호-2 등)'의 3단 구조로 작성하십시오.
+- **이 질문은 {question_number}번을 대체합니다. 대주제 번호는 반드시 {question_number}으로, 세부 질문 번호는 {question_number}-1, {question_number}-2 형식으로 작성하십시오.**
 - 문단 분리: 각 영역(대주제, 책의 구절 또는 상황 요약, 세부 질문) 사이에는 반드시 빈 줄('\\n\\n')을 넣어 문단을 명확히 구분하십시오.
 - 질문 내용: 객관적인 논점 분석보다는 독자 개인의 경험, 가치관, 현실 인식에 빗대어 성찰할 수 있는 주제를 다루십시오.
 - 어조: 참여를 부드럽게 독려하는 친절한 경어체(예: '~인가요?', '~하나요?', '~하시겠습니까?')를 사용하십시오.
@@ -168,7 +169,7 @@ def generate_single_question(
 - 각 문자열 내부의 문단 간 줄바꿈은 '\\n\\n'으로 처리하여 JSON 문법 오류가 발생하지 않도록 하십시오.
 
 응답 예시:
-["1. [대주제 제목]\\n\\n\\"[도서 내 의미 있는 인용구]\\" 또는 [도서 내 특정 상황에 대한 간략한 요약 설명]\\n\\n1-1. [독자의 삶과 가치관에 연결되는 구체적인 질문]"]
+["{question_number}. [대주제 제목]\\n\\n...\\n\\n{question_number}-1. [질문]"]
 """
 
     start = time.perf_counter()
