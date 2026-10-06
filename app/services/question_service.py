@@ -143,3 +143,49 @@ def replace_question_content(
     result["public_answers_count"] = 0
     return result
 
+
+def update_question_content(question_id: str, new_content: str) -> dict:
+    """답변과 추천이 0건인 질문의 내용 직접 수정 (원자적 트랜잭션)
+
+    수정 조건:
+      - likes = 0
+      - public_answers 0건
+
+    조건 불일치 시 ValueError 발생.
+    """
+    with get_db_connection() as conn:
+        # 행 잠금 (다른 트랜잭션이 동시 수정 방지)
+        row = conn.execute(
+            "SELECT * FROM questions WHERE id = %s FOR UPDATE",
+            (question_id,),
+        ).fetchone()
+        if not row:
+            raise ValueError("해당 질문을 찾을 수 없습니다.")
+
+        if row.get("likes", 0) > 0:
+            raise ValueError("추천이 있는 질문은 수정할 수 없습니다.")
+
+        # 답변 수 확인
+        ans_count = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM public_answers WHERE question_id = %s",
+            (question_id,),
+        ).fetchone()
+        if ans_count and ans_count["cnt"] > 0:
+            raise ValueError("답변이 등록된 질문은 수정할 수 없습니다.")
+
+        # 내용 업데이트
+        updated = conn.execute(
+            """
+            UPDATE questions
+            SET content = %s
+            WHERE id = %s
+            RETURNING *
+            """,
+            (new_content.strip(), question_id),
+        ).fetchone()
+
+    result = dict(updated)
+    result["public_answers_count"] = 0
+    return result
+
+

@@ -45,7 +45,7 @@ const BookMateAPI = {
   },
 
   // 1. 북클럽 입장 (책 조회/생성 + 질문 조회/생성)
-  async enterBook(title, author, memo = null, isbn = null, publisher = null, thumbnailUrl = null) {
+  async enterBook(title, author, memo = null, isbn = null, publisher = null, thumbnailUrl = null, memorableScene = null) {
     return this.request("/api/books/enter", {
       method: "POST",
       body: JSON.stringify({
@@ -55,6 +55,7 @@ const BookMateAPI = {
         isbn,
         publisher,
         thumbnail_url: thumbnailUrl,
+        memorable_scene: memorableScene,
       })
     });
   },
@@ -242,6 +243,14 @@ const BookMateAPI = {
         new_content: newContent,
         original_content: originalContent
       })
+    });
+  },
+
+  async updateQuestion(questionId, content) {
+    return this.request(`/api/questions/${questionId}`, {
+      method: "PATCH",
+      credentials: "same-origin",
+      body: JSON.stringify({ content })
     });
   }
 };

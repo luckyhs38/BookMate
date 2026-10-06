@@ -67,3 +67,39 @@ def test_like_non_existent_question(client):
     """존재하지 않는 질문 추천 시 404 반환 테스트"""
     res = client.post("/api/questions/non-existent-id/like")
     assert res.status_code == 404
+
+
+def test_update_question_success(client, mock_current_user):
+    """답변과 추천이 0건인 질문 직접 수정 성공 테스트 — 로그인 상태"""
+    enter_res = client.post("/api/books/enter", json={"title": "데미안", "author": "헤르만 헤세"})
+    book_id = enter_res.json()["book"]["id"]
+    questions = client.get(f"/api/books/{book_id}/questions").json()
+    q_id = questions[0]["id"]
+
+    updated_text = "싱클레어가 경험한 내면의 갈등은 현대인에게 어떤 의미가 있을까요?"
+    res = client.patch(f"/api/questions/{q_id}", json={"content": updated_text})
+    assert res.status_code == 200
+    assert res.json()["content"] == updated_text
+
+
+def test_update_question_unauthorized(client):
+    """비로그인 시 질문 수정 401 차단 테스트"""
+    res = client.patch("/api/questions/test-id", json={"content": "수정할 내용"})
+    assert res.status_code == 401
+
+
+def test_update_question_with_likes_fails(client, mock_current_user):
+    """추천이 있는 질문 수정 시도 시 400 에러 반환 테스트"""
+    enter_res = client.post("/api/books/enter", json={"title": "변신", "author": "프란츠 카프카"})
+    book_id = enter_res.json()["book"]["id"]
+    questions = client.get(f"/api/books/{book_id}/questions").json()
+    q_id = questions[0]["id"]
+
+    # 1회 추천
+    client.post(f"/api/questions/{q_id}/like")
+
+    # 수정 시도
+    res = client.patch(f"/api/questions/{q_id}", json={"content": "수정하려는 내용입니다."})
+    assert res.status_code == 400
+    assert "추천이 있는 질문" in res.json()["detail"]
+

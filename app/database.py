@@ -342,8 +342,8 @@ class InMemoryDatabase:
             return conditions
 
         where_part = sql_normalized[sql_upper.index("WHERE") + 5:]
-        # ORDER BY, RETURNING, LIMIT 등 제거
-        for keyword in ("ORDER BY", "RETURNING", "LIMIT", "OFFSET"):
+        # ORDER BY, RETURNING, LIMIT, FOR UPDATE 등 제거
+        for keyword in ("ORDER BY", "RETURNING", "LIMIT", "OFFSET", "FOR UPDATE"):
             idx = where_part.upper().find(keyword)
             if idx != -1:
                 where_part = where_part[:idx]

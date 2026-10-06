@@ -84,6 +84,8 @@ def search_books_from_kakao(query: str) -> list[dict]:
             "isbn": isbn,
             "publisher": item.get("publisher", "") or None,
             "thumbnail_url": item.get("thumbnail", "") or None,
+            "datetime": item.get("datetime", "") or None,
+            "contents": item.get("contents", "") or None,
         })
 
     return results

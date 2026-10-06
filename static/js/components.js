@@ -170,7 +170,7 @@ const BookMateComponents = {
     }
   },
 
-  createQuestionCard(question, onToggleAccordion, onLike, index = 1, onRegenerate = null) {
+  createQuestionCard(question, onToggleAccordion, onLike, index = 1, onRegenerate = null, onEdit = null) {
     const item = document.createElement("div");
     item.className = "question-row-item";
     if (question && question.id) {
@@ -211,9 +211,26 @@ const BookMateComponents = {
 
     footerEl.appendChild(metaGroupEl);
 
-    // 우측 액션 (재생성 + 추천 + 토론 입장)
+    // 우측 액션 (재생성 + 직접 수정 + 추천 + 토론 입장)
     const actionsGroupEl = document.createElement("div");
     actionsGroupEl.className = "question-actions-group";
+
+    // 직접 수정 버튼: 답변·추천이 모두 없을 때만 표시
+    const canEdit = (question.likes || 0) === 0
+      && (question.public_answers_count || 0) === 0;
+
+    if (canEdit && onEdit) {
+      const editBtn = document.createElement("button");
+      editBtn.className = "question-edit-btn";
+      editBtn.type = "button";
+      editBtn.title = "이 질문을 직접 수정합니다";
+      editBtn.innerHTML = `<span class="edit-icon">✏️</span>`;
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onEdit(question, item, contentEl, editBtn);
+      });
+      actionsGroupEl.appendChild(editBtn);
+    }
 
     // 재생성 버튼: AI 질문이고 답변·추천이 모두 없을 때만 표시
     const canRegenerate = question.source === "AI"

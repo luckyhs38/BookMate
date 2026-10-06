@@ -195,11 +195,32 @@
               <div id="search-loading" style="display: none;"></div>
 
               <div class="form-group" id="book-memo-group" style="margin-top: var(--space-xl);">
-                <label class="form-label" for="book-memo-input">
+                <!-- 2025년 이후 도서 안내 (평소 숨김) -->
+                <div id="recent-book-notice" style="display: none; padding: 14px 16px; margin-bottom: 12px; background: var(--bg-secondary, #f8f6f2); border-left: 3px solid var(--accent-burgundy, #800020); font-size: 0.85rem; line-height: 1.5;">
+                  <strong id="recent-book-title" style="display: block; margin-bottom: 4px; font-weight: 700; color: var(--text-primary);">최근 출간된 도서예요.</strong>
+                  <p id="recent-book-desc" style="margin: 0; color: var(--text-secondary); font-size: 0.82rem;">
+                    AI가 작품 내용을 충분히 알지 못할 수 있어요. 아래 책 소개를 바탕으로 토론 질문을 만들 수 있습니다. 함께 이야기하고 싶은 사건, 인물의 선택, 갈등 등이 있다면 자유롭게 덧붙여 주세요.
+                  </p>
+                </div>
+
+                <label class="form-label" id="book-memo-label" for="book-memo-input">
                   MEMO / 기억에 남는 장면 <span class="optional">(선택)</span>
                 </label>
                 <textarea id="book-memo-input" class="form-textarea-editorial"
                   placeholder="기억에 남는 문장이나 장면을 남겨주시면 AI가 더 깊이 있는 토론 질문을 준비합니다."></textarea>
+                <div id="book-memo-hint" style="display: none; margin-top: 6px; font-size: 0.8rem; color: var(--text-muted, #777);"></div>
+              </div>
+
+              <!-- 기억에 남는 장면 / 문장 (2025년 이후 도서 보조 입력, 평소 숨김) -->
+              <div class="form-group" id="book-memorable-scene-group" style="display: none; margin-top: var(--space-lg);">
+                <label class="form-label" for="book-memorable-scene-input">
+                  기억에 남는 장면 / 문장 <span class="optional">(선택)</span>
+                </label>
+                <p style="margin: 0 0 6px 0; font-size: 0.8rem; color: var(--text-muted, #777);">
+                  함께 이야기해보고 싶은 장면이나 문장이 있다면 적어주세요.
+                </p>
+                <textarea id="book-memorable-scene-input" class="form-textarea-editorial" style="min-height: 70px;"
+                  placeholder="예) 주인공이 마지막에 다시 바다로 나가려고 하는 장면"></textarea>
               </div>
 
               <div class="form-submit" style="margin-top: var(--space-xl);">

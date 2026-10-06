@@ -7,6 +7,7 @@ from app.models import (
     QuestionLikeResponse,
     RegeneratePreviewResponse,
     ApplyRegeneratedRequest,
+    QuestionUpdateRequest,
     UserResponse,
 )
 from app.services import question_service, book_service, ai_service
@@ -262,4 +263,59 @@ def apply_regenerated_question(
         public_answers_count=updated_q.get("public_answers_count", 0),
         created_at=str(updated_q.get("created_at", "")),
     )
+
+
+# ---------------------------------------------------------------------------
+# 질문 직접 수정 (인라인 편집)
+# ---------------------------------------------------------------------------
+
+@router.patch(
+    "/api/questions/{question_id}",
+    response_model=QuestionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="질문 내용 직접 수정",
+)
+def update_question(
+    question_id: str,
+    req: QuestionUpdateRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """답변과 추천이 0건인 질문의 내용 직접 수정
+
+    - 로그인 필수
+    - likes=0, 답변 0건인 질문만 대상
+    """
+    content = req.content.strip()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="질문 내용을 입력해 주세요.",
+        )
+
+    try:
+        updated_q = question_service.update_question_content(
+            question_id=question_id,
+            new_content=content,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"질문 수정 중 오류가 발생했습니다: {str(e)}",
+        )
+
+    return QuestionResponse(
+        id=str(updated_q["id"]),
+        book_id=str(updated_q.get("book_id", "")),
+        content=updated_q["content"],
+        source=updated_q["source"],
+        likes=updated_q.get("likes", 0),
+        public_answers_count=updated_q.get("public_answers_count", 0),
+        created_at=str(updated_q.get("created_at", "")),
+    )
+
 

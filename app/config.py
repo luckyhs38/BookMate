@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.6-flash"
+    GEMINI_SEARCH_MODEL: str = "gemini-2.5-flash"
     DATABASE_URL: str = ""
     KAKAO_REST_API_KEY: str = ""
     NEON_AUTH_BASE_URL: str = ""

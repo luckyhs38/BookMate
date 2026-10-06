@@ -28,7 +28,11 @@ _generating_book_ids: set[str] = set()
 # ---------------------------------------------------------------------------
 
 def _background_generate_questions(
-    book_id: str, book_title: str, author: str, memo: str | None
+    book_id: str,
+    book_title: str,
+    author: str,
+    memo: str | None,
+    memorable_scene: str | None = None,
 ) -> None:
     """BackgroundTask: Gemini로 초기 질문 생성 후 DB 저장.
     이미 생성 중인 book_id는 중복 실행하지 않는다.
@@ -52,6 +56,7 @@ def _background_generate_questions(
             book_title=book_title,
             author=author,
             memo=memo,
+            memorable_scene=memorable_scene,
         )
         question_service.create_initial_questions(book_id, q_texts)
 
@@ -164,6 +169,7 @@ def enter_book_club(req: BookEnterRequest, background_tasks: BackgroundTasks):
                 book["title"],
                 book["author"],
                 req.memo,
+                req.memorable_scene,
             )
             logger.info(f"[Enter] Scheduled background question generation for book_id={book_id}")
 

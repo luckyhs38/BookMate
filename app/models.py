@@ -11,6 +11,8 @@ class BookSearchResult(BaseModel):
     isbn: str | None = None
     publisher: str | None = None
     thumbnail_url: str | None = None
+    datetime: str | None = None
+    contents: str | None = None
 
 
 class BookEnterRequest(BaseModel):
@@ -19,7 +21,8 @@ class BookEnterRequest(BaseModel):
     isbn: str | None = Field(default=None, max_length=20, description="ISBN (카카오 검색 선택 시 제공)")
     publisher: str | None = Field(default=None, max_length=255, description="출판사")
     thumbnail_url: str | None = Field(default=None, description="책 표지 URL (카카오 제공)")
-    memo: str | None = Field(default=None, max_length=1000, description="기억에 남는 장면 또는 메모 (선택)")
+    memo: str | None = Field(default=None, max_length=1000, description="작품 내용 및 소개 (선택)")
+    memorable_scene: str | None = Field(default=None, max_length=1000, description="기억에 남는 장면 또는 문장 (선택)")
 
 
 class BookResponse(BaseModel):
@@ -81,6 +84,12 @@ class ApplyRegeneratedRequest(BaseModel):
     """재생성 적용 요청: 미리보기에서 확인한 새 질문과 낙관적 잠금용 원본 내용"""
     new_content: str = Field(..., min_length=2, description="새로 생성된 질문 내용")
     original_content: str = Field(..., min_length=2, description="요청 시점의 원본 질문 내용 (동시성 검증용)")
+
+
+class QuestionUpdateRequest(BaseModel):
+    """질문 직접 수정 요청"""
+    content: str = Field(..., min_length=2, max_length=500, description="수정할 질문 내용")
+
 
 
 # 3. 공개 답변 관련 모델

@@ -423,10 +423,106 @@ document.addEventListener("DOMContentLoaded", () => {
   const bookAuthorInput = document.getElementById("book-author-input");
   const directBookTitleInput = document.getElementById("direct-book-title-input");
   const bookMemoInput = document.getElementById("book-memo-input");
+  const bookMemorableSceneGroup = document.getElementById("book-memorable-scene-group");
+  const bookMemorableSceneInput = document.getElementById("book-memorable-scene-input");
   const enterBookClubBtn = document.getElementById("enter-book-club-btn");
   const mainLoadingEl = document.getElementById("main-loading");
+  const recentBookNotice = document.getElementById("recent-book-notice");
+  const bookMemoLabel = document.getElementById("book-memo-label");
+  const bookMemoHint = document.getElementById("book-memo-hint");
 
   let selectedBook = null;
+
+  // 2025년 이후 도서 contents 길이 기준 (50자 미만 시 짧음 안내)
+  const SHORT_CONTENTS_LENGTH_THRESHOLD = 50;
+
+  // HTML 태그 제거 유틸리티
+  function stripHtmlTags(str) {
+    if (!str) return "";
+    return str.replace(/<[^>]*>?/gm, "").trim();
+  }
+
+  // 출간연도 파싱 (연도 파싱 실패 시 null)
+  function getBookPublicationYear(book) {
+    if (!book || !book.datetime) return null;
+    const year = parseInt(String(book.datetime).substring(0, 4), 10);
+    return isNaN(year) ? null : year;
+  }
+
+  // 출간연도에 따른 메모 영역 및 버튼 UI 동적 조정
+  function updateBookEntryUI(book) {
+    const pubYear = getBookPublicationYear(book);
+    const isRecentBook = pubYear !== null && pubYear >= 2025;
+
+    if (isRecentBook) {
+      if (recentBookNotice) recentBookNotice.style.display = "block";
+      if (bookMemorableSceneGroup) bookMemorableSceneGroup.style.display = "block";
+      if (bookMemoLabel) {
+        bookMemoLabel.innerHTML = 'MEMO / 작품 내용 및 소개 <span class="optional">(선택)</span>';
+      }
+      if (enterBookClubBtn) {
+        enterBookClubBtn.textContent = "질문 만들기 →";
+      }
+
+      // contents 전처리 (HTML 태그 제거 및 잘린 문장 자연스러운 말줄임 처리)
+      let cleanContents = stripHtmlTags(book && book.contents);
+      if (cleanContents && !/[.!?…]$/.test(cleanContents)) {
+        cleanContents += "...";
+      }
+
+      if (bookMemoInput) {
+        if (cleanContents) {
+          bookMemoInput.value = cleanContents;
+          bookMemoInput.placeholder = "기억에 남는 사건, 인물의 선택, 갈등 등을 자유롭게 덧붙여 주세요.";
+        } else {
+          bookMemoInput.value = "";
+          bookMemoInput.placeholder = "책 소개를 찾지 못했어요. 주요 인물, 사건, 갈등을 간단히 알려주세요.";
+        }
+      }
+
+      // 보조 안내 힌트 표시
+      updateContentsHint(cleanContents);
+    } else {
+      // 2024년 이하 도서 또는 직접 추가 (이전 책에서 채워졌던 내용 초기화)
+      if (recentBookNotice) recentBookNotice.style.display = "none";
+      if (bookMemorableSceneGroup) {
+        bookMemorableSceneGroup.style.display = "none";
+      }
+      if (bookMemorableSceneInput) {
+        bookMemorableSceneInput.value = "";
+      }
+      if (bookMemoLabel) {
+        bookMemoLabel.innerHTML = 'MEMO / 기억에 남는 장면 <span class="optional">(선택)</span>';
+      }
+      if (bookMemoInput) {
+        bookMemoInput.value = "";
+        bookMemoInput.placeholder = "기억에 남는 문장이나 장면을 남겨주시면 AI가 더 깊이 있는 토론 질문을 준비합니다.";
+      }
+      if (enterBookClubBtn) {
+        enterBookClubBtn.textContent = "ENTER BOOK CLUB →";
+      }
+      if (bookMemoHint) {
+        bookMemoHint.style.display = "none";
+        bookMemoHint.textContent = "";
+      }
+    }
+  }
+
+  // contents 유무 및 길이에 따른 보조 힌트 갱신
+  function updateContentsHint(text) {
+    if (!bookMemoHint) return;
+    const trimmed = (text || "").trim();
+    if (!trimmed) {
+      bookMemoHint.style.display = "block";
+      bookMemoHint.textContent = "책 소개를 찾지 못했어요. 주요 인물, 사건, 갈등을 간단히 알려주세요.";
+    } else if (trimmed.length < SHORT_CONTENTS_LENGTH_THRESHOLD || trimmed.endsWith("...")) {
+      bookMemoHint.style.display = "block";
+      bookMemoHint.textContent = "도서 정보 미리보기 요약입니다. 뒷부분이나 핵심 내용을 자유롭게 이어 적어주세요.";
+    } else {
+      bookMemoHint.style.display = "none";
+      bookMemoHint.textContent = "";
+    }
+  }
 
   // 검색 버튼 클릭 또는 Enter 키
   function handleBookSearch() {
@@ -454,6 +550,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function performBookSearch(query) {
     if (bookSearchBtn) bookSearchBtn.disabled = true;
     selectedBook = null;
+    if (bookMemoInput) bookMemoInput.value = "";
+    if (bookMemorableSceneInput) bookMemorableSceneInput.value = "";
+    updateBookEntryUI(null);
     searchResultsArea.style.display = "none";
     if (manualEntryFormContainer) manualEntryFormContainer.style.display = "none";
     searchLoadingEl.style.display = "block";
@@ -536,8 +635,20 @@ document.addEventListener("DOMContentLoaded", () => {
           const allCards = searchResultsList.querySelectorAll(".book-search-card");
           allCards.forEach(c => c.classList.remove("selected"));
           cardEl.classList.add("selected");
+          // 출간연도에 따라 메모 영역 및 버튼 UI 갱신
+          updateBookEntryUI(selectedBook);
         })
       );
+    });
+  }
+
+  // 사용자가 textarea를 직접 수정할 때 (2025년 이후 도서인 경우 힌트 실시간 갱신)
+  if (bookMemoInput) {
+    bookMemoInput.addEventListener("input", () => {
+      const pubYear = getBookPublicationYear(selectedBook);
+      if (pubYear !== null && pubYear >= 2025) {
+        updateContentsHint(bookMemoInput.value);
+      }
     });
   }
 
@@ -546,6 +657,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bookAuthorInput.addEventListener("input", () => {
       if (selectedBook) {
         selectedBook = null;
+        updateBookEntryUI(null);
         const allCards = searchResultsList ? searchResultsList.querySelectorAll(".book-search-card") : [];
         allCards.forEach(c => c.classList.remove("selected"));
       }
@@ -555,6 +667,7 @@ document.addEventListener("DOMContentLoaded", () => {
     directBookTitleInput.addEventListener("input", () => {
       if (selectedBook) {
         selectedBook = null;
+        updateBookEntryUI(null);
         const allCards = searchResultsList ? searchResultsList.querySelectorAll(".book-search-card") : [];
         allCards.forEach(c => c.classList.remove("selected"));
       }
@@ -564,6 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 공통 북클럽 입장 버튼 핸들러
   async function handleEnterBookClub() {
     const memo = bookMemoInput ? bookMemoInput.value.trim() : null;
+    const memorableScene = bookMemorableSceneInput ? bookMemorableSceneInput.value.trim() : null;
     const isManualOpen = manualEntryFormContainer && manualEntryFormContainer.style.display !== "none";
     const directTitle = directBookTitleInput ? directBookTitleInput.value.trim() : "";
     const author = bookAuthorInput ? bookAuthorInput.value.trim() : "";
@@ -576,14 +690,15 @@ document.addEventListener("DOMContentLoaded", () => {
         memo,
         selectedBook.isbn || null,
         selectedBook.publisher || null,
-        selectedBook.thumbnail_url || null
+        selectedBook.thumbnail_url || null,
+        memorableScene
       );
       return;
     }
 
     // 2. 직접 추가 방식을 사용한 경우 (직접 추가 폼이 실제로 열려 있을 때만)
     if (isManualOpen && directTitle && author) {
-      executeEnterBook(directTitle, author, memo);
+      executeEnterBook(directTitle, author, memo, null, null, null, memorableScene);
       return;
     }
 
@@ -601,7 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function executeEnterBook(title, author, memo = null, isbn = null, publisher = null, thumbnailUrl = null) {
+  async function executeEnterBook(title, author, memo = null, isbn = null, publisher = null, thumbnailUrl = null, memorableScene = null) {
     if (enterBookClubBtn) enterBookClubBtn.disabled = true;
     mainLoadingEl.style.display = "block";
     mainLoadingEl.innerHTML = "";
@@ -616,7 +731,8 @@ document.addEventListener("DOMContentLoaded", () => {
         memo || null,
         isbn || null,
         publisher || null,
-        thumbnailUrl || null
+        thumbnailUrl || null,
+        memorableScene || null
       );
 
       // 다른 책으로 입장할 때만 이전 책의 토론/독후감/캐시 상태 초기화
@@ -810,7 +926,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (aiQuestions.length > 0) {
       aiQuestions.forEach((q, i) => {
         aiQuestionsListEl.appendChild(
-          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1, handleRegenerateQuestion)
+          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1, handleRegenerateQuestion, handleEditQuestion)
         );
       });
     } else {
@@ -824,7 +940,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (userQuestions.length > 0) {
       userQuestions.forEach((q, i) => {
         userQuestionsListEl.appendChild(
-          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1)
+          BookMateComponents.createQuestionCard(q, handleToggleAccordion, handleLikeQuestion, i + 1, null, handleEditQuestion)
         );
       });
     } else {
@@ -867,6 +983,123 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showToast(err.message || "추천 처리에 실패했습니다.");
     }
+  }
+
+  // 질문 직접 수정 핸들러 (인라인 편집)
+  function handleEditQuestion(question, questionRowEl, contentEl, editBtn) {
+    // 1. 비로그인 시 로그인 팝업
+    if (!BookMateState.currentUser) {
+      showToast("질문을 수정하려면 로그인이 필요합니다.");
+      openAuthModal("login");
+      return;
+    }
+
+    // 이미 편집 모드인지 확인
+    const headerEl = questionRowEl.querySelector(".question-row-header");
+    if (!headerEl || headerEl.querySelector(".question-inline-edit-form")) {
+      return;
+    }
+
+    // 기존 질문 문구 및 수정 버튼 임시 숨김
+    contentEl.style.display = "none";
+    editBtn.style.display = "none";
+
+    // 인라인 편집 폼 생성
+    const formEl = document.createElement("div");
+    formEl.className = "question-inline-edit-form";
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "question-edit-textarea";
+    textarea.value = question.content;
+    textarea.rows = 2;
+    textarea.maxLength = 500;
+    textarea.placeholder = "수정할 질문 내용을 입력하세요 (2자 이상 500자 이하)";
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "question-edit-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn-editorial-sm btn-edit-cancel";
+    cancelBtn.textContent = "취소";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn-editorial-sm btn-edit-save";
+    saveBtn.textContent = "저장";
+
+    actionsEl.appendChild(cancelBtn);
+    actionsEl.appendChild(saveBtn);
+
+    formEl.appendChild(textarea);
+    formEl.appendChild(actionsEl);
+    headerEl.appendChild(formEl);
+
+    // 자동 높이 조절 및 포커스
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    // 편집 모드 닫기
+    const closeEdit = () => {
+      formEl.remove();
+      contentEl.style.display = "";
+      editBtn.style.display = "";
+    };
+
+    // 취소 이벤트
+    cancelBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeEdit();
+    });
+
+    // 저장 이벤트
+    saveBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const newContent = textarea.value.trim();
+
+      if (!newContent) {
+        showToast("질문 내용을 입력해 주세요.");
+        textarea.focus();
+        return;
+      }
+      if (newContent.length < 2) {
+        showToast("질문은 2자 이상 입력해 주세요.");
+        textarea.focus();
+        return;
+      }
+      if (newContent === question.content) {
+        closeEdit();
+        return;
+      }
+
+      saveBtn.disabled = true;
+      cancelBtn.disabled = true;
+      saveBtn.textContent = "저장 중...";
+
+      try {
+        const updated = await BookMateAPI.updateQuestion(question.id, newContent);
+        question.content = updated.content;
+        BookMateComponents.renderFormattedQuestion(contentEl, updated.content);
+        closeEdit();
+        showToast("질문이 수정되었습니다 ✏️");
+      } catch (err) {
+        showToast(err.message || "질문 수정에 실패했습니다.");
+        saveBtn.disabled = false;
+        cancelBtn.disabled = false;
+        saveBtn.textContent = "저장";
+      }
+    });
+
+    // ESC 키로 취소, Ctrl+Enter / Cmd+Enter로 저장
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closeEdit();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.stopPropagation();
+        saveBtn.click();
+      }
+    });
   }
 
   // AI 질문 재생성 핸들러

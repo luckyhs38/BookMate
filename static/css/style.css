@@ -842,6 +842,103 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Question Edit Button */
+.question-edit-btn {
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  padding: 3px 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0;
+  line-height: 1;
+}
+
+.question-edit-btn:hover {
+  border-color: var(--accent-burgundy);
+  color: var(--accent-burgundy);
+}
+
+.question-edit-btn .edit-icon {
+  font-size: 0.85rem;
+}
+
+/* Question Inline Edit Form */
+.question-inline-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.question-edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--accent-burgundy, #800020);
+  border-radius: 2px;
+  resize: vertical;
+  outline: none;
+}
+
+.question-edit-textarea:focus {
+  border-color: var(--accent-burgundy);
+  box-shadow: 0 0 0 1px var(--accent-burgundy);
+}
+
+.question-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.btn-editorial-sm {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.btn-edit-save {
+  background: var(--text-primary, #111111);
+  color: #ffffff;
+  border: 1px solid var(--text-primary, #111111);
+}
+
+.btn-edit-save:hover {
+  background: var(--accent-burgundy, #800020);
+  border-color: var(--accent-burgundy, #800020);
+}
+
+.btn-edit-save:disabled,
+.btn-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-edit-cancel {
+  background: transparent;
+  color: var(--text-secondary, #666666);
+  border: 1px solid var(--border-hairline, #e0e0e0);
+}
+
+.btn-edit-cancel:hover {
+  border-color: var(--text-primary, #111111);
+  color: var(--text-primary, #111111);
+}
+
+
 /* Preview modal card (extends .auth-modal-card) */
 .regen-preview-card {
   max-width: 560px;
